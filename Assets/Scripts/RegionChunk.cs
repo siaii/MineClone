@@ -47,13 +47,15 @@ public class RegionChunk : MonoBehaviour
     };
 
 
+    private void Awake()
+    {
+        _texturePacker = FindObjectOfType<TexturePacker>();
+        _terrainGen = FindObjectOfType<TerrainGen>();
+    }
+
     // Start is called before the first frame update
     void Start()
     {
-        if (!_texturePacker)
-        {
-            _texturePacker = FindObjectOfType<TexturePacker>();
-        }
     }
 
     // Update is called once per frame
@@ -62,13 +64,13 @@ public class RegionChunk : MonoBehaviour
         
     }
 
+    //Make multithreaded
     public void GenerateBlockData()
     {
         blocksData = new BlockTypes[chunkSizeX, chunkSizeY, chunkSizeZ];
         chunkData = new RenderChunk[chunkSizeX / RenderChunk.xSize, chunkSizeY / RenderChunk.ySize,
             chunkSizeZ / RenderChunk.zSize];
         
-        _terrainGen = FindObjectOfType<TerrainGen>();
         
         for (int x = 0; x < chunkSizeX; x++)
         {
@@ -106,6 +108,7 @@ public class RegionChunk : MonoBehaviour
         }
     }
 
+    //Make multithreaded
     public IEnumerator GenerateRenderChunks()
     {
         for (int x = 0; x < chunkSizeX / RenderChunk.xSize; x++)
@@ -138,12 +141,9 @@ public class RegionChunk : MonoBehaviour
         return roundedRes;
     }
 
+    //Make multithreaded
     void CalculateDrawnMesh(int rChunkX,int rChunkY, int rChunkZ, List<Vector3> vertices, List<int> tris, List<Vector2> uvs)
     {
-        if (!_texturePacker)
-        {
-            _texturePacker = FindObjectOfType<TexturePacker>();
-        }
         int startX = rChunkX * RenderChunk.xSize;
         int startY = rChunkY * RenderChunk.ySize;
         int startZ = rChunkZ * RenderChunk.zSize;
@@ -272,6 +272,11 @@ public class RegionChunk : MonoBehaviour
     public void SetHeightScale(float scale)
     {
         heightScale = scale;
+    }
+
+    public void SetActive(bool active)
+    {
+        gameObject.SetActive(active);
     }
 
 }

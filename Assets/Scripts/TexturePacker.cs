@@ -1,11 +1,5 @@
-using System;
-using System.Collections;
 using System.Collections.Generic;
-using System.Linq;
 using UnityEngine;
-using UnityEngine.Experimental.Rendering;
-using UnityEngine.Rendering;
-using UnityEngine.UI;
 
 public class TexturePacker : MonoBehaviour
 {
@@ -17,28 +11,29 @@ public class TexturePacker : MonoBehaviour
 
     [SerializeField] private Material renderChunkMaterial;
 
-    [SerializeField] private Image uiImage;
-    
     void Awake()
     {
         packTextures();
         generateTextureDictIdx();
     }
 
-    void packTextures()
+    void Update()
+    {
+    }
+
+    public void packTextures()
     {
         Texture2D resTexture = new Texture2D(1024,1024);
         List<Texture2D> texturesToPack = new List<Texture2D>();
 
-        for (int i = 0; i < textureDict.Length; i++)
+        foreach (var t in textureDict)
         {
-            texturesToPack.Add(textureDict[i].blockTexture);
+            texturesToPack.Add(t.blockTexture);
         }
         blockTextureRects = resTexture.PackTextures(texturesToPack.ToArray(), 2);
         resTexture.filterMode = FilterMode.Point;
         resTexture.wrapMode = TextureWrapMode.Clamp;
-        resTexture.Apply();
-        renderChunkMaterial.mainTexture = resTexture;
+        renderChunkMaterial.SetTexture("_BaseMap", resTexture);
     }
 
     void generateTextureDictIdx()
