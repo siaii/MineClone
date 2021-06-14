@@ -17,12 +17,12 @@ public class RegionChunk : MonoBehaviour
     
     public int minBlockHeightGenerated = 48;
 
-    public BlockTypes[,,] BlocksData
+    public BlockTypes[][][] BlocksData
     {
         get;
         set;
-    } = new BlockTypes[chunkSizeX + 2, chunkSizeY, chunkSizeZ + 2];
-    private RenderChunk[,,] chunkData;
+    } = new BlockTypes[chunkSizeX + 2][][];
+    private RenderChunk[][][] chunkData;
 
     private Vector2Int chunkPos;
 
@@ -55,6 +55,23 @@ public class RegionChunk : MonoBehaviour
     {
         _texturePacker = FindObjectOfType<TexturePacker>();
         _terrainGen = FindObjectOfType<TerrainGen>();
+        for (int i = 0; i < chunkSizeX+2; i++)
+        {
+            BlocksData[i] = new BlockTypes[chunkSizeY][];
+            for (int j = 0; j < chunkSizeY; j++)
+            {
+                BlocksData[i][j] = new BlockTypes[chunkSizeZ+2];
+            }
+        }
+        chunkData = new RenderChunk[chunkSizeX / RenderChunk.xSize][][];
+        for (int i = 0; i < chunkSizeX / RenderChunk.xSize; i++)
+        {
+            chunkData[i] = new RenderChunk[chunkSizeY / RenderChunk.ySize][];
+            for (int j = 0; j < chunkSizeY / RenderChunk.ySize; j++)
+            {
+                chunkData[i][j] = new RenderChunk[chunkSizeZ / RenderChunk.zSize];
+            }
+        }
     }
 
     // Start is called before the first frame update
@@ -71,31 +88,26 @@ public class RegionChunk : MonoBehaviour
     //Make multithreaded
     public IEnumerator GenerateRenderChunks()
     {
-        if (chunkData == null)
-            chunkData = new RenderChunk[chunkSizeX / RenderChunk.xSize, chunkSizeY / RenderChunk.ySize,
-                chunkSizeZ / RenderChunk.zSize];
-        
         for (int x = 0; x < chunkSizeX / RenderChunk.xSize; x++)
         {
             for (int z = 0; z < chunkSizeZ / RenderChunk.zSize; z++)
             {
                 for (int y = 0; y < chunkSizeY / RenderChunk.ySize; y++)
                 {
-                    if (chunkData[x, y, z] == null)
+                    if (chunkData[x][y][z] == null)
                     {
                         GameObject renderChunkGO = Instantiate(renderChunkPrefab, this.transform);
-                        yield return null;
                         RenderChunk renderChunkScript = renderChunkGO.GetComponent<RenderChunk>();
                         renderChunkGO.transform.localPosition = new Vector3(x * RenderChunk.xSize, y * RenderChunk.ySize,
                             z * RenderChunk.zSize);
-                        chunkData[x, y, z] = renderChunkScript;
+                        chunkData[x][y][z] = renderChunkScript;
                     }
                     List<Vector3> renderChunkVertices = new List<Vector3>();
                     List<int> renderChunkTris = new List<int>();
                     List<Vector2> renderChunkUVs = new List<Vector2>();
                         
                     StartCoroutine(CalculateDrawnMesh(x, y, z, renderChunkVertices, renderChunkTris, renderChunkUVs));
-                    yield return new WaitForSeconds(0.1f);
+                    yield return null;
                 }
             }
         }
@@ -120,10 +132,10 @@ public class RegionChunk : MonoBehaviour
                         int localY = y - startY;
                         int localZ = z - startZ;
                         int oldLength = vertices.Count;
-                        vertices.AddRange(blockTypesProperties[BlocksData[x,y,z]].GetSideVertices(side, new Vector3(localX,localY,localZ)));
+                        vertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(side, new Vector3(localX,localY,localZ)));
                         
-                        uvs.AddRange(GetBlockSideUVs(BlocksData[x,y,z], side));
-                        var blockTris = blockTypesProperties[BlocksData[x, y, z]].GetSideTriangles();
+                        uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], side));
+                        var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles();
 
                         foreach (var offset in blockTris)
                         {
@@ -137,7 +149,7 @@ public class RegionChunk : MonoBehaviour
             yield return null;
         }
         
-        chunkData[rChunkX,rChunkY,rChunkZ].BuildMesh(vertices.ToArray(), tris.ToArray(), uvs.ToArray());
+        chunkData[rChunkX][rChunkY][rChunkZ].BuildMesh(vertices.ToArray(), tris.ToArray(), uvs.ToArray());
     }
 
     Vector2[] GetBlockSideUVs(BlockTypes type, Sides side)
@@ -177,7 +189,7 @@ public class RegionChunk : MonoBehaviour
     {
         if (y < 0 || y >= chunkSizeY)
             return true;
-        return blockTypesProperties[BlocksData[x, y, z]].isTransparent;
+        return blockTypesProperties[BlocksData[x][y][z]].isTransparent;
     }
 
     public void SetChunkPos(int x, int z)

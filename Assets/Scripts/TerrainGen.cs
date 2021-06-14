@@ -32,7 +32,7 @@ public class TerrainGen : MonoBehaviour
 
     private List<Vector2Int> toLoad = new List<Vector2Int>();
     
-    private Dictionary<Vector2Int, BlockTypes[,,]> inactiveBlocksData = new Dictionary<Vector2Int, BlockTypes[,,]>();
+    private Dictionary<Vector2Int, BlockTypes[][][]> inactiveBlocksData = new Dictionary<Vector2Int, BlockTypes[][][]>();
 
     private Vector2Int _prevPlayerChunk;
 
@@ -135,7 +135,7 @@ public class TerrainGen : MonoBehaviour
         {
             ActivateOrCreateChunk(toLoad[0]);
             toLoad.RemoveAt(0);
-            yield return new WaitForSeconds(0.1f);
+            yield return new WaitForSeconds(0.05f);
         }
     }
 
@@ -152,14 +152,14 @@ public class TerrainGen : MonoBehaviour
             var curChunk = Instantiate(regionChunkPrefab, new Vector3(chunkCoord.x*RegionChunk.chunkSizeX, 0, chunkCoord.y*RegionChunk.chunkSizeZ), Quaternion.identity);
             chunk = curChunk.GetComponent<RegionChunk>();
         }
-
+        chunk.gameObject.SetActive(true);
         for (int x = 0; x < RegionChunk.chunkSizeX + 2; x++)
         {
             for (int z = 0; z < RegionChunk.chunkSizeZ + 2; z++)
             {
                 for (int y = 0; y < RegionChunk.chunkSizeY; y++)
                 {
-                    chunk.BlocksData[x, y, z] = GetBlockType(chunkCoord.x * RegionChunk.chunkSizeX + x - 1,
+                    chunk.BlocksData[x][y][z] = GetBlockType(chunkCoord.x * RegionChunk.chunkSizeX + x - 1,
                         y, chunkCoord.y * RegionChunk.chunkSizeZ + z - 1);
                 }
             }
@@ -169,7 +169,7 @@ public class TerrainGen : MonoBehaviour
         chunk.transform.position = new Vector3(chunkCoord.x * RegionChunk.chunkSizeX, 0,
             chunkCoord.y * RegionChunk.chunkSizeZ);
         activeRegionChunks.Add(chunkCoord, chunk);
-        chunk.gameObject.SetActive(true);
+        
     }
 
     Vector2Int ChunkFromPosition(Vector3 playerPosition)
@@ -236,7 +236,7 @@ public class TerrainGen : MonoBehaviour
             {
                 for (int y = 0; y < RegionChunk.chunkSizeY; y++)
                 {
-                    curRegionChunk.BlocksData[x, y, z] = GetBlockType(xCoord * RegionChunk.chunkSizeX + x - 1,
+                    curRegionChunk.BlocksData[x][y][z] = GetBlockType(xCoord * RegionChunk.chunkSizeX + x - 1,
                         y, zCoord * RegionChunk.chunkSizeZ - 1);
                 }
             }
