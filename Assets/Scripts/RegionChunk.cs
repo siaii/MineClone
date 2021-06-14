@@ -17,7 +17,11 @@ public class RegionChunk : MonoBehaviour
     
     public int minBlockHeightGenerated = 48;
 
-    private BlockTypes[,,] blocksData;
+    public BlockTypes[,,] BlocksData
+    {
+        get;
+        set;
+    } = new BlockTypes[chunkSizeX + 2, chunkSizeY, chunkSizeZ + 2];
     private RenderChunk[,,] chunkData;
 
     private Vector2Int chunkPos;
@@ -65,88 +69,43 @@ public class RegionChunk : MonoBehaviour
     }
 
     //Make multithreaded
-    public void GenerateBlockData()
-    {
-        blocksData = new BlockTypes[chunkSizeX, chunkSizeY, chunkSizeZ];
-        chunkData = new RenderChunk[chunkSizeX / RenderChunk.xSize, chunkSizeY / RenderChunk.ySize,
-            chunkSizeZ / RenderChunk.zSize];
-        
-        
-        for (int x = 0; x < chunkSizeX; x++)
-        {
-            for (int z = 0; z < chunkSizeZ; z++)
-            {
-                float chunkCoordOffsetX = chunkPos.x * noiseScale;
-                float chunkCoordOffsetZ = chunkPos.y * noiseScale;
-                        
-                float xCoord = chunkCoordOffsetX + (float)x / RegionChunk.chunkSizeX * noiseScale;
-                float zCoord = chunkCoordOffsetZ + (float)z / RegionChunk.chunkSizeZ * noiseScale;
-
-                int groundHeight = SampleNoiseHeight(xCoord, zCoord);
-
-                int y;
-                for (y = 0; y < groundHeight-1; y++)
-                {
-                    blocksData[x, y, z] = BlockTypes.STONE;
-                }
-
-                for (; y < groundHeight; y++)
-                {
-                    blocksData[x, y, z] = BlockTypes.DIRT;
-                }
-
-                for (; y < groundHeight + 1; y++)
-                {
-                    blocksData[x, y, z] = BlockTypes.GRASS;
-                }
-                
-                for (; y < chunkSizeY; y++)
-                {
-                    blocksData[x, y, z] = BlockTypes.AIR;
-                }
-            }
-        }
-    }
-
-    //Make multithreaded
     public IEnumerator GenerateRenderChunks()
     {
+        if (chunkData == null)
+            chunkData = new RenderChunk[chunkSizeX / RenderChunk.xSize, chunkSizeY / RenderChunk.ySize,
+                chunkSizeZ / RenderChunk.zSize];
+        
         for (int x = 0; x < chunkSizeX / RenderChunk.xSize; x++)
         {
             for (int z = 0; z < chunkSizeZ / RenderChunk.zSize; z++)
             {
                 for (int y = 0; y < chunkSizeY / RenderChunk.ySize; y++)
                 {
-                    GameObject renderChunk = Instantiate(renderChunkPrefab, this.transform);
-                    renderChunk.transform.localPosition = new Vector3(x * RenderChunk.xSize, y * RenderChunk.ySize,
-                        z * RenderChunk.zSize);
+                    if (chunkData[x, y, z] == null)
+                    {
+                        GameObject renderChunkGO = Instantiate(renderChunkPrefab, this.transform);
+                        yield return null;
+                        RenderChunk renderChunkScript = renderChunkGO.GetComponent<RenderChunk>();
+                        renderChunkGO.transform.localPosition = new Vector3(x * RenderChunk.xSize, y * RenderChunk.ySize,
+                            z * RenderChunk.zSize);
+                        chunkData[x, y, z] = renderChunkScript;
+                    }
                     List<Vector3> renderChunkVertices = new List<Vector3>();
                     List<int> renderChunkTris = new List<int>();
                     List<Vector2> renderChunkUVs = new List<Vector2>();
-                    
-                    CalculateDrawnMesh(x, y, z, renderChunkVertices, renderChunkTris, renderChunkUVs);
-                    renderChunk.GetComponent<RenderChunk>().BuildMesh(renderChunkVertices.ToArray(), renderChunkTris.ToArray(), renderChunkUVs.ToArray());
-                    yield return null;
+                        
+                    StartCoroutine(CalculateDrawnMesh(x, y, z, renderChunkVertices, renderChunkTris, renderChunkUVs));
+                    yield return new WaitForSeconds(0.1f);
                 }
             }
         }
     }
-
-    int SampleNoiseHeight(float x, float y)
+    
+    IEnumerator CalculateDrawnMesh(int rChunkX,int rChunkY, int rChunkZ, List<Vector3> vertices, List<int> tris, List<Vector2> uvs)
     {
-        float sample = noise.snoise(new float2(x, y));
-        float sampleNormd = (sample+1f)/2f;
-        int roundedRes = Mathf.RoundToInt(minBlockHeightGenerated + sampleNormd * heightScale * (chunkSizeY - minBlockHeightGenerated));
-
-        return roundedRes;
-    }
-
-    //Make multithreaded
-    void CalculateDrawnMesh(int rChunkX,int rChunkY, int rChunkZ, List<Vector3> vertices, List<int> tris, List<Vector2> uvs)
-    {
-        int startX = rChunkX * RenderChunk.xSize;
+        int startX = rChunkX * RenderChunk.xSize + 1;
         int startY = rChunkY * RenderChunk.ySize;
-        int startZ = rChunkZ * RenderChunk.zSize;
+        int startZ = rChunkZ * RenderChunk.zSize + 1;
         
         for (int x = startX; x < startX + RenderChunk.xSize; x++)
         {
@@ -161,19 +120,24 @@ public class RegionChunk : MonoBehaviour
                         int localY = y - startY;
                         int localZ = z - startZ;
                         int oldLength = vertices.Count;
-                        vertices.AddRange(blockTypesProperties[blocksData[x,y,z]].GetSideVertices(side, new Vector3(localX,localY,localZ)));
+                        vertices.AddRange(blockTypesProperties[BlocksData[x,y,z]].GetSideVertices(side, new Vector3(localX,localY,localZ)));
                         
-                        uvs.AddRange(GetBlockSideUVs(blocksData[x,y,z], side));
-                        var blockTris = blockTypesProperties[blocksData[x, y, z]].GetSideTriangles();
+                        uvs.AddRange(GetBlockSideUVs(BlocksData[x,y,z], side));
+                        var blockTris = blockTypesProperties[BlocksData[x, y, z]].GetSideTriangles();
 
                         foreach (var offset in blockTris)
                         {
                             tris.Add(oldLength+offset);
                         }
+
+                        
                     }
                 }
             }
+            yield return null;
         }
+        
+        chunkData[rChunkX,rChunkY,rChunkZ].BuildMesh(vertices.ToArray(), tris.ToArray(), uvs.ToArray());
     }
 
     Vector2[] GetBlockSideUVs(BlockTypes type, Sides side)
@@ -200,46 +164,10 @@ public class RegionChunk : MonoBehaviour
             int checkBlockX = xCoord + dirVector.x;
             int checkBlockY = yCoord + dirVector.y;
             int checkBlockZ = zCoord + dirVector.z;
-            if (IsValidCoordinates(checkBlockX, checkBlockY, checkBlockZ))
-            {
-                if (checkBlockY < 0 || checkBlockY >= chunkSizeY)
-                    sidesToDraw.Add(pair.Key);
-                else if( CheckBlockIsTransparent(checkBlockX, checkBlockY, checkBlockZ))
-                    sidesToDraw.Add(pair.Key);
-            }
-            else
-            {
-                //Check for the block in the neighbouring chunk
-                if (checkBlockX < 0)
-                {
-                    if (_terrainGen.CheckBlockIsTransparent(new Vector2Int(chunkPos.x - 1, chunkPos.y), chunkSizeX - 1,
-                        checkBlockY, checkBlockZ))
-                    {
-                        sidesToDraw.Add(pair.Key);
-                    }
-                }else if (checkBlockX >= chunkSizeX)
-                {
-                    if (_terrainGen.CheckBlockIsTransparent(new Vector2Int(chunkPos.x + 1, chunkPos.y), 0,
-                        checkBlockY, checkBlockZ))
-                    {
-                        sidesToDraw.Add(pair.Key);
-                    }
-                }else if (checkBlockZ < 0)
-                {
-                    if (_terrainGen.CheckBlockIsTransparent(new Vector2Int(chunkPos.x, chunkPos.y - 1), checkBlockX,
-                        checkBlockY, chunkSizeZ - 1))
-                    {
-                        sidesToDraw.Add(pair.Key);
-                    }
-                }else if (checkBlockZ >= chunkSizeZ)
-                {
-                    if (_terrainGen.CheckBlockIsTransparent(new Vector2Int(chunkPos.x, chunkPos.y + 1), checkBlockX,
-                        checkBlockY, 0))
-                    {
-                        sidesToDraw.Add(pair.Key);
-                    }
-                }
-            }
+            
+            if(checkBlockY<0 || checkBlockY>=chunkSizeY || CheckBlockIsTransparent(checkBlockX, checkBlockY, checkBlockZ))
+                sidesToDraw.Add(pair.Key);
+            
         }
 
         return sidesToDraw;
@@ -249,14 +177,7 @@ public class RegionChunk : MonoBehaviour
     {
         if (y < 0 || y >= chunkSizeY)
             return true;
-        return blockTypesProperties[blocksData[x, y, z]].isTransparent;
-    }
-    bool IsValidCoordinates(int x, int y, int z)
-    {
-        if(x<0 || x>=chunkSizeX || z<0 || z>=chunkSizeZ)
-            return false;
-
-        return true;
+        return blockTypesProperties[BlocksData[x, y, z]].isTransparent;
     }
 
     public void SetChunkPos(int x, int z)
