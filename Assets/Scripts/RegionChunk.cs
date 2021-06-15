@@ -118,76 +118,10 @@ public class RegionChunk : MonoBehaviour
     
     void CalculateDrawnMesh(int rChunkX,int rChunkY, int rChunkZ, List<Vector3> vertices, List<int> tris, List<Vector2> uvs)
     {
-        // int startX = rChunkX * RenderChunk.xSize + 1;
-        // int startY = rChunkY * RenderChunk.ySize;
-        // int startZ = rChunkZ * RenderChunk.zSize + 1;
-        //
-        // for (int x = startX; x < startX + RenderChunk.xSize; x++)
-        // {
-        //     for (int y = startY; y < startY + RenderChunk.ySize; y++)
-        //     {
-        //         for (int z = startZ; z < startZ + RenderChunk.zSize; z++)
-        //         {
-        //             var sidesToDraw = CheckBorderingTransparent(x, y, z);
-        //             foreach (var side in sidesToDraw)
-        //             {
-        //                 int localX = x - startX;
-        //                 int localY = y - startY;
-        //                 int localZ = z - startZ;
-        //                 int oldLength = vertices.Count;
-        //                 vertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(side, new Vector3(localX,localY,localZ)));
-        //                 
-        //                 uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], side));
-        //                 var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles();
-        //
-        //                 foreach (var offset in blockTris)
-        //                 {
-        //                     tris.Add(oldLength+offset);
-        //                 }
-        //                 
-        //             }
-        //         }
-        //     }
-        //     yield return null;
-        // }
-        
-                // int startX = rChunkX * RenderChunk.xSize + 1;
-        // int startY = rChunkY * RenderChunk.ySize;
-        // int startZ = rChunkZ * RenderChunk.zSize + 1;
-        //
-        // for (int x = startX; x < startX + RenderChunk.xSize; x++)
-        // {
-        //     for (int y = startY; y < startY + RenderChunk.ySize; y++)
-        //     {
-        //         for (int z = startZ; z < startZ + RenderChunk.zSize; z++)
-        //         {
-        //             var sidesToDraw = CheckBorderingTransparent(x, y, z);
-        //             foreach (var side in sidesToDraw)
-        //             {
-        //                 int localX = x - startX;
-        //                 int localY = y - startY;
-        //                 int localZ = z - startZ;
-        //                 int oldLength = vertices.Count;
-        //                 vertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(side, new Vector3(localX,localY,localZ)));
-        //                 
-        //                 uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], side));
-        //                 var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles();
-        //
-        //                 foreach (var offset in blockTris)
-        //                 {
-        //                     tris.Add(oldLength+offset);
-        //                 }
-        //                 
-        //             }
-        //         }
-        //     }
-        //     yield return null;
-        // }
-        
         NativeList<Vector3> verts = new NativeList<Vector3>(Allocator.Persistent);
         NativeList<int> triss = new NativeList<int>(Allocator.Persistent);
         NativeList<Vector2> uvss = new NativeList<Vector2>(Allocator.Persistent);
-        NativeArray<BlockTypes> flatBlocksData = new NativeArray<BlockTypes>((BlocksData.SelectMany(a => a).ToArray()).SelectMany(a=>a).ToArray(), Allocator.Persistent);
+        NativeArray<BlockTypes> flatBlocksData = new NativeArray<BlockTypes>((BlocksData.SelectMany(a => a).ToArray()).SelectMany(b=>b).ToArray(), Allocator.Persistent);
         NativeArray<Rect> atlasRects = new NativeArray<Rect>(_texturePacker.blockTextureRects, Allocator.Persistent);
         NativeHashMap<int, int> textureRectIndex = new NativeHashMap<int, int>(_texturePacker.textureDictIndex.Count, Allocator.Persistent);
 
@@ -349,7 +283,7 @@ public class RegionChunk : MonoBehaviour
 
         private int ConvertCoordToIdx(int x, int y, int z)
         {
-            return (x * chunkSizeY * (chunkSizeZ + 2)) + y * chunkSizeZ+2 + z;
+            return (x * chunkSizeY * (chunkSizeZ + 2)) + y * (chunkSizeZ+2) + z;
         }
     }
     List<Sides> CheckBorderingTransparent(int xCoord, int yCoord, int zCoord)
