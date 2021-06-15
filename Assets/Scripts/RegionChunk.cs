@@ -13,7 +13,7 @@ public class RegionChunk : MonoBehaviour
     
     public const int chunkSizeX = 16;
     public const int chunkSizeZ = 16;
-    public const int chunkSizeY = 128;
+    public const int chunkSizeY = 64;
     
     public int minBlockHeightGenerated = 48;
 
@@ -85,7 +85,6 @@ public class RegionChunk : MonoBehaviour
         
     }
 
-    //Make multithreaded
     public IEnumerator GenerateRenderChunks()
     {
         for (int x = 0; x < chunkSizeX / RenderChunk.xSize; x++)
@@ -102,19 +101,20 @@ public class RegionChunk : MonoBehaviour
                             z * RenderChunk.zSize);
                         chunkData[x][y][z] = renderChunkScript;
                     }
-                    List<Vector3> renderChunkVertices = new List<Vector3>();
-                    List<int> renderChunkTris = new List<int>();
-                    List<Vector2> renderChunkUVs = new List<Vector2>();
-                        
-                    StartCoroutine(CalculateDrawnMesh(x, y, z, renderChunkVertices, renderChunkTris, renderChunkUVs));
+
+                    StartCoroutine(CalculateDrawnMesh(x, y, z));
                     yield return null;
                 }
             }
         }
     }
     
-    IEnumerator CalculateDrawnMesh(int rChunkX,int rChunkY, int rChunkZ, List<Vector3> vertices, List<int> tris, List<Vector2> uvs)
+    IEnumerator CalculateDrawnMesh(int rChunkX,int rChunkY, int rChunkZ)
     {
+        List<Vector3> vertices = new List<Vector3>();
+        List<int> tris = new List<int>();
+        List<Vector2> uvs = new List<Vector2>();
+        
         int startX = rChunkX * RenderChunk.xSize + 1;
         int startY = rChunkY * RenderChunk.ySize;
         int startZ = rChunkZ * RenderChunk.zSize + 1;
@@ -125,24 +125,27 @@ public class RegionChunk : MonoBehaviour
             {
                 for (int z = startZ; z < startZ + RenderChunk.zSize; z++)
                 {
-                    var sidesToDraw = CheckBorderingTransparent(x, y, z);
-                    foreach (var side in sidesToDraw)
+                    foreach (var pair in sideVector)
                     {
-                        int localX = x - startX;
-                        int localY = y - startY;
-                        int localZ = z - startZ;
-                        int oldLength = vertices.Count;
-                        vertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(side, new Vector3(localX,localY,localZ)));
-                        
-                        uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], side));
-                        var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles();
+                        Vector3Int checkBlock = new Vector3Int(x, y, z) + pair.Value;
 
-                        foreach (var offset in blockTris)
+                        if (checkBlock.y < 0 || checkBlock.y >= chunkSizeY ||
+                            CheckBlockIsTransparent(checkBlock))
                         {
-                            tris.Add(oldLength+offset);
+                            int localX = x - startX;
+                            int localY = y - startY;
+                            int localZ = z - startZ;
+                            int oldLength = vertices.Count;
+                            vertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(pair.Key, new Vector3(localX,localY,localZ)));
+                            
+                            uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], pair.Key));
+                            var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles();
+                            
+                            foreach (var offset in blockTris)
+                            {
+                                tris.Add(oldLength+offset);
+                            }
                         }
-
-                        
                     }
                 }
             }
@@ -167,29 +170,11 @@ public class RegionChunk : MonoBehaviour
         return res;
     }
 
-    List<Sides> CheckBorderingTransparent(int xCoord, int yCoord, int zCoord)
+    public bool CheckBlockIsTransparent(Vector3Int coord)
     {
-        List<Sides> sidesToDraw = new List<Sides>();
-        foreach (var pair in sideVector)
-        {
-            Vector3Int dirVector = pair.Value;
-            int checkBlockX = xCoord + dirVector.x;
-            int checkBlockY = yCoord + dirVector.y;
-            int checkBlockZ = zCoord + dirVector.z;
-            
-            if(checkBlockY<0 || checkBlockY>=chunkSizeY || CheckBlockIsTransparent(checkBlockX, checkBlockY, checkBlockZ))
-                sidesToDraw.Add(pair.Key);
-            
-        }
-
-        return sidesToDraw;
-    }
-
-    public bool CheckBlockIsTransparent(int x, int y, int z)
-    {
-        if (y < 0 || y >= chunkSizeY)
+        if (coord.y < 0 || coord.y >= chunkSizeY)
             return true;
-        return blockTypesProperties[BlocksData[x][y][z]].isTransparent;
+        return blockTypesProperties[BlocksData[coord.x][coord.y][coord.z]].isTransparent;
     }
 
     public void SetChunkPos(int x, int z)

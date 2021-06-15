@@ -36,13 +36,9 @@ public class TerrainGen : MonoBehaviour
 
     private Vector2Int _prevPlayerChunk;
 
-    private Vector2Int[] _chunkRerenderDir = new[]
-    {
-        new Vector2Int(0, 1),
-        new Vector2Int(-1, 0),
-        new Vector2Int(0, -1),
-        new Vector2Int(1, 0),
-    };
+    private int inLoadingChunk = 0;
+
+    private int maxSimultaneousChunkLoading = 3;
     
     // Start is called before the first frame update
     void Start()
@@ -93,27 +89,39 @@ public class TerrainGen : MonoBehaviour
         foreach (var chunkCoord in toLoad)
         {
             if (chunkCoord.x < curPlayerChunk.x - renderDistance || chunkCoord.x > curPlayerChunk.x + renderDistance ||
-                chunkCoord.y < curPlayerChunk.y - renderDistance || chunkCoord.y > curPlayerChunk.y + renderDistance)
+                chunkCoord.y < curPlayerChunk.y - renderDistance || chunkCoord.y > curPlayerChunk.y + renderDistance || 
+                activeRegionChunks.ContainsKey(chunkCoord))
             {
                 toLoad.Remove(chunkCoord);
             }
         }
 
-        DelayedDestroyChunk(toDestroy);
+        DestroyChunk(toDestroy);
+
+        if (init)
+        {
+            while (toLoad.Count > 0)
+            {
+                StartCoroutine(ActivateOrCreateChunk(toLoad[0]));
+                toLoad.RemoveAt(0);
+            }
+        }
+        else
+        {
+            StartCoroutine(DelayedLoadChunks());
+        }
         
-        StartCoroutine(DelayedLoadChunks());
 
         _prevPlayerChunk = curPlayerChunk;
     }
 
-    void DelayedDestroyChunk(List<Vector2Int> toDestroy)
+    void DestroyChunk(List<Vector2Int> toDestroy)
     {
         foreach (var chunkCoord in toDestroy)
         {
             if (!activeRegionChunks.ContainsKey(chunkCoord))
                 return;
             
-            activeRegionChunks[chunkCoord].gameObject.SetActive(false);
             pooledRegionChunks.Add(activeRegionChunks[chunkCoord]);
                 
             if (inactiveBlocksData.ContainsKey(chunkCoord))
@@ -124,7 +132,8 @@ public class TerrainGen : MonoBehaviour
             {
                 inactiveBlocksData.Add(chunkCoord, activeRegionChunks[chunkCoord].BlocksData);
             }
-                
+
+            activeRegionChunks[chunkCoord].gameObject.SetActive(false);
             activeRegionChunks.Remove(chunkCoord);
         }
     }
@@ -133,14 +142,16 @@ public class TerrainGen : MonoBehaviour
     {
         while (toLoad.Count > 0)
         {
-            ActivateOrCreateChunk(toLoad[0]);
+            StartCoroutine(ActivateOrCreateChunk(toLoad[0]));
             toLoad.RemoveAt(0);
-            yield return new WaitForSeconds(0.05f);
+            yield return new WaitUntil(() => inLoadingChunk < maxSimultaneousChunkLoading);
         }
     }
 
-    void ActivateOrCreateChunk(Vector2Int chunkCoord)
+    IEnumerator ActivateOrCreateChunk(Vector2Int chunkCoord)
     {
+        inLoadingChunk++;
+        
         RegionChunk chunk;
         if (pooledRegionChunks.Count > 0)
         {
@@ -153,6 +164,9 @@ public class TerrainGen : MonoBehaviour
             chunk = curChunk.GetComponent<RegionChunk>();
         }
         chunk.gameObject.SetActive(true);
+        chunk.transform.position = new Vector3(chunkCoord.x * RegionChunk.chunkSizeX, 0,
+            chunkCoord.y * RegionChunk.chunkSizeZ);
+        activeRegionChunks.Add(chunkCoord, chunk);
         for (int x = 0; x < RegionChunk.chunkSizeX + 2; x++)
         {
             for (int z = 0; z < RegionChunk.chunkSizeZ + 2; z++)
@@ -163,13 +177,12 @@ public class TerrainGen : MonoBehaviour
                         y, chunkCoord.y * RegionChunk.chunkSizeZ + z - 1);
                 }
             }
+
+            yield return new WaitForSeconds(0.05f);
         }
             
-        StartCoroutine(chunk.GenerateRenderChunks());
-        chunk.transform.position = new Vector3(chunkCoord.x * RegionChunk.chunkSizeX, 0,
-            chunkCoord.y * RegionChunk.chunkSizeZ);
-        activeRegionChunks.Add(chunkCoord, chunk);
-        
+        yield return StartCoroutine(chunk.GenerateRenderChunks());
+        inLoadingChunk--;
     }
 
     Vector2Int ChunkFromPosition(Vector3 playerPosition)
@@ -223,48 +236,6 @@ public class TerrainGen : MonoBehaviour
         return res;
     }
 
-    void GenerateSingleChunk(int xCoord, int zCoord)
-    {
-        var curChunk = Instantiate(regionChunkPrefab, new Vector3(xCoord*RegionChunk.chunkSizeX, 0, zCoord*RegionChunk.chunkSizeZ), Quaternion.identity);
-        var curRegionChunk = curChunk.GetComponent<RegionChunk>();
-        curRegionChunk.SetChunkPos(xCoord,zCoord);
-        curRegionChunk.SetNoiseScale(scale);
-        
-        for (int x = 0; x < RegionChunk.chunkSizeX + 2; x++)
-        {
-            for (int z = 0; z < RegionChunk.chunkSizeZ + 2; z++)
-            {
-                for (int y = 0; y < RegionChunk.chunkSizeY; y++)
-                {
-                    curRegionChunk.BlocksData[x][y][z] = GetBlockType(xCoord * RegionChunk.chunkSizeX + x - 1,
-                        y, zCoord * RegionChunk.chunkSizeZ - 1);
-                }
-            }
-        }
-
-        curRegionChunk.GenerateRenderChunks();
-        
-        activeRegionChunks.Add(new Vector2Int(xCoord, zCoord), curRegionChunk);
-    }
-    void GenerateChunks()
-    {
-        for (int i = -renderDistance; i <= renderDistance; i++)
-        {
-            for (int j = -renderDistance; j <= renderDistance; j++)
-            {
-                GenerateSingleChunk(i,j);
-            }            
-        }
-    }
-
-    void GenerateChunksMesh()
-    {
-        foreach (var pair in activeRegionChunks)
-        {
-            StartCoroutine(pair.Value.GenerateRenderChunks());
-        }
-    }
-
     public void CalcTexture()
     {
         seed = Random.Range(-100, 100);
@@ -282,12 +253,5 @@ public class TerrainGen : MonoBehaviour
             }
         }
         noiseTexture.Apply();
-    }
-
-    public bool CheckBlockIsTransparent(Vector2Int chunkID, int xCoord, int yCoord, int zCoord)
-    {
-        if (!activeRegionChunks.ContainsKey(chunkID))
-            return false;
-        return activeRegionChunks[chunkID].CheckBlockIsTransparent(xCoord, yCoord, zCoord);
     }
 }

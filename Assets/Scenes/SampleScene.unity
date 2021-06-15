@@ -821,7 +821,7 @@ MonoBehaviour:
   seed: 0
   regionChunkPrefab: {fileID: 8017198263036184829, guid: 410d204f85242a448a5490bc25866a4e, type: 3}
   playerTransform: {fileID: 1687258585}
-  renderDistance: 4
+  renderDistance: 8
 --- !u!4 &1976626768
 Transform:
   m_ObjectHideFlags: 0

@@ -9,7 +9,7 @@ using UnityEngine;
 public class RenderChunk : MonoBehaviour
 {
     public const int xSize = 16;
-    public const int ySize = 32;
+    public const int ySize = 16;
     public const int zSize = 16;
 
     private Mesh renderMesh;
@@ -37,7 +37,6 @@ public class RenderChunk : MonoBehaviour
         renderMesh.vertices = verts;
         renderMesh.triangles = tris;
         renderMesh.uv = uvs;
-		renderMesh.Optimize();
         renderMesh.RecalculateNormals();
     }
 }
