@@ -165,7 +165,7 @@ public class TerrainGen : MonoBehaviour
             }
         }
             
-        StartCoroutine(chunk.GenerateRenderChunks());
+        chunk.GenerateRenderChunks();
         chunk.transform.position = new Vector3(chunkCoord.x * RegionChunk.chunkSizeX, 0,
             chunkCoord.y * RegionChunk.chunkSizeZ);
         activeRegionChunks.Add(chunkCoord, chunk);
@@ -261,7 +261,7 @@ public class TerrainGen : MonoBehaviour
     {
         foreach (var pair in activeRegionChunks)
         {
-            StartCoroutine(pair.Value.GenerateRenderChunks());
+            // StartCoroutine(pair.Value.GenerateRenderChunks());
         }
     }
 

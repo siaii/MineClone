@@ -1,6 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Linq;
+using Unity.Collections;
+using Unity.Jobs;
 using Unity.Mathematics;
 using UnityEditor.PackageManager.UI;
 using UnityEngine;
@@ -32,7 +36,7 @@ public class RegionChunk : MonoBehaviour
     private TerrainGen _terrainGen;
     private TexturePacker _texturePacker;
     
-    private readonly Dictionary<Sides, Vector3Int> sideVector = new Dictionary<Sides, Vector3Int>()
+    private static readonly Dictionary<Sides, Vector3Int> sideVector = new Dictionary<Sides, Vector3Int>()
     {
         {Sides.UP, Vector3Int.up},
         {Sides.DOWN, Vector3Int.down},
@@ -42,7 +46,7 @@ public class RegionChunk : MonoBehaviour
         {Sides.RIGHT, Vector3Int.right}
     };
 
-    private readonly Dictionary<BlockTypes, Block> blockTypesProperties = new Dictionary<BlockTypes, Block>()
+    private static readonly Dictionary<BlockTypes, Block> blockTypesProperties = new Dictionary<BlockTypes, Block>()
     {
         {BlockTypes.GRASS, new Grass()},
         {BlockTypes.AIR, new Air()},
@@ -86,7 +90,7 @@ public class RegionChunk : MonoBehaviour
     }
 
     //Make multithreaded
-    public IEnumerator GenerateRenderChunks()
+    public void GenerateRenderChunks()
     {
         for (int x = 0; x < chunkSizeX / RenderChunk.xSize; x++)
         {
@@ -106,50 +110,116 @@ public class RegionChunk : MonoBehaviour
                     List<int> renderChunkTris = new List<int>();
                     List<Vector2> renderChunkUVs = new List<Vector2>();
                         
-                    StartCoroutine(CalculateDrawnMesh(x, y, z, renderChunkVertices, renderChunkTris, renderChunkUVs));
-                    yield return null;
+                    CalculateDrawnMesh(x, y, z, renderChunkVertices, renderChunkTris, renderChunkUVs);
                 }
             }
         }
     }
     
-    IEnumerator CalculateDrawnMesh(int rChunkX,int rChunkY, int rChunkZ, List<Vector3> vertices, List<int> tris, List<Vector2> uvs)
+    void CalculateDrawnMesh(int rChunkX,int rChunkY, int rChunkZ, List<Vector3> vertices, List<int> tris, List<Vector2> uvs)
     {
-        int startX = rChunkX * RenderChunk.xSize + 1;
-        int startY = rChunkY * RenderChunk.ySize;
-        int startZ = rChunkZ * RenderChunk.zSize + 1;
+        // int startX = rChunkX * RenderChunk.xSize + 1;
+        // int startY = rChunkY * RenderChunk.ySize;
+        // int startZ = rChunkZ * RenderChunk.zSize + 1;
+        //
+        // for (int x = startX; x < startX + RenderChunk.xSize; x++)
+        // {
+        //     for (int y = startY; y < startY + RenderChunk.ySize; y++)
+        //     {
+        //         for (int z = startZ; z < startZ + RenderChunk.zSize; z++)
+        //         {
+        //             var sidesToDraw = CheckBorderingTransparent(x, y, z);
+        //             foreach (var side in sidesToDraw)
+        //             {
+        //                 int localX = x - startX;
+        //                 int localY = y - startY;
+        //                 int localZ = z - startZ;
+        //                 int oldLength = vertices.Count;
+        //                 vertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(side, new Vector3(localX,localY,localZ)));
+        //                 
+        //                 uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], side));
+        //                 var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles();
+        //
+        //                 foreach (var offset in blockTris)
+        //                 {
+        //                     tris.Add(oldLength+offset);
+        //                 }
+        //                 
+        //             }
+        //         }
+        //     }
+        //     yield return null;
+        // }
         
-        for (int x = startX; x < startX + RenderChunk.xSize; x++)
+                // int startX = rChunkX * RenderChunk.xSize + 1;
+        // int startY = rChunkY * RenderChunk.ySize;
+        // int startZ = rChunkZ * RenderChunk.zSize + 1;
+        //
+        // for (int x = startX; x < startX + RenderChunk.xSize; x++)
+        // {
+        //     for (int y = startY; y < startY + RenderChunk.ySize; y++)
+        //     {
+        //         for (int z = startZ; z < startZ + RenderChunk.zSize; z++)
+        //         {
+        //             var sidesToDraw = CheckBorderingTransparent(x, y, z);
+        //             foreach (var side in sidesToDraw)
+        //             {
+        //                 int localX = x - startX;
+        //                 int localY = y - startY;
+        //                 int localZ = z - startZ;
+        //                 int oldLength = vertices.Count;
+        //                 vertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(side, new Vector3(localX,localY,localZ)));
+        //                 
+        //                 uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], side));
+        //                 var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles();
+        //
+        //                 foreach (var offset in blockTris)
+        //                 {
+        //                     tris.Add(oldLength+offset);
+        //                 }
+        //                 
+        //             }
+        //         }
+        //     }
+        //     yield return null;
+        // }
+        
+        NativeList<Vector3> verts = new NativeList<Vector3>(Allocator.Persistent);
+        NativeList<int> triss = new NativeList<int>(Allocator.Persistent);
+        NativeList<Vector2> uvss = new NativeList<Vector2>(Allocator.Persistent);
+        NativeArray<BlockTypes> flatBlocksData = new NativeArray<BlockTypes>((BlocksData.SelectMany(a => a).ToArray()).SelectMany(a=>a).ToArray(), Allocator.Persistent);
+        NativeArray<Rect> atlasRects = new NativeArray<Rect>(_texturePacker.blockTextureRects, Allocator.Persistent);
+        NativeHashMap<int, int> textureRectIndex = new NativeHashMap<int, int>(_texturePacker.textureDictIndex.Count, Allocator.Persistent);
+
+        foreach (var pair in _texturePacker.textureDictIndex)
         {
-            for (int y = startY; y < startY + RenderChunk.ySize; y++)
-            {
-                for (int z = startZ; z < startZ + RenderChunk.zSize; z++)
-                {
-                    var sidesToDraw = CheckBorderingTransparent(x, y, z);
-                    foreach (var side in sidesToDraw)
-                    {
-                        int localX = x - startX;
-                        int localY = y - startY;
-                        int localZ = z - startZ;
-                        int oldLength = vertices.Count;
-                        vertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(side, new Vector3(localX,localY,localZ)));
-                        
-                        uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], side));
-                        var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles();
-
-                        foreach (var offset in blockTris)
-                        {
-                            tris.Add(oldLength+offset);
-                        }
-
-                        
-                    }
-                }
-            }
-            yield return null;
+            textureRectIndex.Add((int)pair.Key, pair.Value);
         }
+
+        var job = new CalculateMeshJob()
+        {
+            verts = verts,
+            tris = triss,
+            uvs = uvss,
+            BlocksData = flatBlocksData,
+            atlasRect = atlasRects,
+            textureRectIndex = textureRectIndex,
+            renderChunkCoords = new Vector3Int(rChunkX, rChunkY, rChunkZ)
+        };
+
+        var jobHandle = job.Schedule();
+
+        jobHandle.Complete();
+        chunkData[rChunkX][rChunkY][rChunkZ].BuildMesh(verts.ToArray(), triss.ToArray(), uvss.ToArray());
+
         
-        chunkData[rChunkX][rChunkY][rChunkZ].BuildMesh(vertices.ToArray(), tris.ToArray(), uvs.ToArray());
+        //Move some of these upwards out of function
+        verts.Dispose();
+        triss.Dispose();
+        uvss.Dispose();
+        atlasRects.Dispose();
+        flatBlocksData.Dispose();
+        textureRectIndex.Dispose();
     }
 
     Vector2[] GetBlockSideUVs(BlockTypes type, Sides side)
@@ -167,6 +237,121 @@ public class RegionChunk : MonoBehaviour
         return res;
     }
 
+    //Maybe convert this to job?
+    //Convert blocksdata into nativearray and give readonly access to this
+    public struct CalculateMeshJob : IJob
+    {
+        public NativeList<Vector3> verts;
+        public NativeList<int> tris;
+        public NativeList<Vector2> uvs;
+
+        [Unity.Collections.ReadOnly]
+        public NativeArray<BlockTypes> BlocksData; 
+        
+        [Unity.Collections.ReadOnly]
+        public NativeArray<Rect> atlasRect;
+        
+        [Unity.Collections.ReadOnly]
+        public NativeHashMap<int, int> textureRectIndex;
+
+        public Vector3Int renderChunkCoords;
+        public void Execute()
+        {
+            int startX = renderChunkCoords.x * RenderChunk.xSize + 1;
+            int startY = renderChunkCoords.y * RenderChunk.ySize;
+            int startZ = renderChunkCoords.z * RenderChunk.zSize + 1;
+        
+            for (int x = startX; x < startX + RenderChunk.xSize; x++)
+            {
+                for (int y = startY; y < startY + RenderChunk.ySize; y++)
+                {
+                    for (int z = startZ; z < startZ + RenderChunk.zSize; z++)
+                    {
+                        var sidesToDraw = CheckBorderingTransparent(x, y, z);
+                        foreach (var side in sidesToDraw)
+                        {
+                            int localX = x - startX;
+                            int localY = y - startY;
+                            int localZ = z - startZ;
+                            int oldLength = verts.Length;
+                            NativeArray<Vector3> vertRes = new NativeArray<Vector3>(blockTypesProperties[BlocksData[ConvertCoordToIdx(x, y, z)]]
+                                .GetSideVertices(side, new Vector3(localX, localY, localZ)), Allocator.Temp);
+                            verts.AddRange(vertRes);
+
+                            NativeArray<Vector2> uvRes =
+                                new NativeArray<Vector2>(GetBlockSideUVs(BlocksData[ConvertCoordToIdx(x, y, z)], side),
+                                    Allocator.Temp);
+                            uvs.AddRange(uvRes);
+                            var blockTris = blockTypesProperties[BlocksData[ConvertCoordToIdx(x,y,z)]].GetSideTriangles();
+
+                            foreach (var offset in blockTris)
+                            {
+                                tris.Add(oldLength+offset);
+                            }
+
+                            vertRes.Dispose();
+                            uvRes.Dispose();
+                        }
+                    }
+                }
+            }
+            
+            
+        }
+        
+        Vector2[] GetBlockSideUVs(BlockTypes type, Sides side)
+        {
+            var localUV = blockTypesProperties[type].GetSideUVs(side);
+            Vector2[] res = new Vector2[localUV.Length];
+            var textureRect = atlasRect[textureRectIndex[(int)type]];
+
+            for(int i=0; i<localUV.Length; i++)
+            {
+                res[i] = new Vector2(textureRect.x + localUV[i].x * textureRect.width,
+                    textureRect.y + localUV[i].y * textureRect.height);
+            }
+
+            return res;
+        }
+        
+        List<Sides> CheckBorderingTransparent(int xCoord, int yCoord, int zCoord)
+        {
+            List<Sides> sidesToDraw = new List<Sides>();
+            foreach (var pair in sideVector)
+            {
+                Vector3Int dirVector = pair.Value;
+                int checkBlockX = xCoord + dirVector.x;
+                int checkBlockY = yCoord + dirVector.y;
+                int checkBlockZ = zCoord + dirVector.z;
+            
+                if(checkBlockY<0 || checkBlockY>=chunkSizeY || CheckBlockIsTransparent(checkBlockX, checkBlockY, checkBlockZ))
+                    sidesToDraw.Add(pair.Key);
+            
+            }
+
+            return sidesToDraw;
+        }
+        
+        public bool CheckBlockIsTransparent(int x, int y, int z)
+        {
+            if (y < 0 || y >= chunkSizeY)
+                return true;
+            try
+            {
+                return blockTypesProperties[BlocksData[ConvertCoordToIdx(x, y, z)]].isTransparent;
+            }
+            catch
+            {
+                print(x+","+y+","+z);
+                return false;
+            }
+        }
+
+        private int ConvertCoordToIdx(int x, int y, int z)
+        {
+            return (x * chunkSizeY * (chunkSizeZ + 2)) + y * chunkSizeZ+2 + z;
+        }
+    }
     List<Sides> CheckBorderingTransparent(int xCoord, int yCoord, int zCoord)
     {
         List<Sides> sidesToDraw = new List<Sides>();

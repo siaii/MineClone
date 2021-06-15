@@ -1,8 +1,8 @@
 {
   "dependencies": {
     "com.unity.burst": {
-      "version": "1.4.8",
-      "depth": 0,
+      "version": "1.5.3",
+      "depth": 1,
       "source": "registry",
       "dependencies": {
         "com.unity.mathematics": "1.2.1"
@@ -15,6 +15,15 @@
       "source": "registry",
       "dependencies": {
         "com.unity.nuget.newtonsoft-json": "2.0.0"
+      },
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.collections": {
+      "version": "0.17.0-preview.18",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.burst": "1.5.3"
       },
       "url": "https://packages.unity.com"
     },
@@ -48,6 +57,16 @@
       "depth": 0,
       "source": "registry",
       "dependencies": {},
+      "url": "https://packages.unity.com"
+    },
+    "com.unity.jobs": {
+      "version": "0.8.0-preview.23",
+      "depth": 0,
+      "source": "registry",
+      "dependencies": {
+        "com.unity.collections": "0.15.0-preview.21",
+        "com.unity.mathematics": "1.2.1"
+      },
       "url": "https://packages.unity.com"
     },
     "com.unity.mathematics": {
