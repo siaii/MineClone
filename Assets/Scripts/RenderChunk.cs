@@ -37,6 +37,7 @@ public class RenderChunk : MonoBehaviour
         renderMesh.vertices = verts;
         renderMesh.triangles = tris;
         renderMesh.uv = uvs;
+        renderMesh.Optimize();
         renderMesh.RecalculateNormals();
     }
 }

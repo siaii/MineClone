@@ -86,16 +86,6 @@ public class TerrainGen : MonoBehaviour
             }
         }
 
-        foreach (var chunkCoord in toLoad)
-        {
-            if (chunkCoord.x < curPlayerChunk.x - renderDistance || chunkCoord.x > curPlayerChunk.x + renderDistance ||
-                chunkCoord.y < curPlayerChunk.y - renderDistance || chunkCoord.y > curPlayerChunk.y + renderDistance || 
-                activeRegionChunks.ContainsKey(chunkCoord))
-            {
-                toLoad.Remove(chunkCoord);
-            }
-        }
-
         DestroyChunk(toDestroy);
 
         if (init)
@@ -151,6 +141,14 @@ public class TerrainGen : MonoBehaviour
     IEnumerator ActivateOrCreateChunk(Vector2Int chunkCoord)
     {
         inLoadingChunk++;
+        var curPlayerChunk = ChunkFromPosition(playerTransform.position);
+        if (chunkCoord.x < curPlayerChunk.x - renderDistance || chunkCoord.x > curPlayerChunk.x + renderDistance ||
+            chunkCoord.y < curPlayerChunk.y - renderDistance || chunkCoord.y > curPlayerChunk.y + renderDistance || 
+            activeRegionChunks.ContainsKey(chunkCoord))
+        {
+            inLoadingChunk--;
+            yield break;
+        }
         
         RegionChunk chunk;
         if (pooledRegionChunks.Count > 0)
