@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEditor;
+using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
@@ -20,10 +21,13 @@ public class TerrainGen : MonoBehaviour
     [SerializeField] private int seed;
 
     [SerializeField] private GameObject regionChunkPrefab;
+    [SerializeField] private GameObject playerPrefab;
     [SerializeField] private Transform playerTransform;
     
     [SerializeField] private int renderDistance = 8;
-
+    [SerializeField] private int minGenerationHeight = 32;
+    [SerializeField] private float heightScale = 0.7f;
+ 
     private Texture2D noiseTexture;
 
     private readonly Dictionary<Vector2Int, RegionChunk> activeRegionChunks = new Dictionary<Vector2Int, RegionChunk>();
@@ -39,6 +43,8 @@ public class TerrainGen : MonoBehaviour
     private int inLoadingChunk = 0;
 
     private int maxSimultaneousChunkLoading = 3;
+
+    private GameObject playerGO;
     
     // Start is called before the first frame update
     void Start()
@@ -87,22 +93,40 @@ public class TerrainGen : MonoBehaviour
         }
 
         DestroyChunk(toDestroy);
-
-        if (init)
-        {
-            while (toLoad.Count > 0)
-            {
-                StartCoroutine(ActivateOrCreateChunk(toLoad[0]));
-                toLoad.RemoveAt(0);
-            }
-        }
-        else
-        {
-            StartCoroutine(DelayedLoadChunks());
-        }
+        
+        StartCoroutine(DelayedLoadChunks());
+        // if (init)
+        // {
+        //     while (toLoad.Count > 0)
+        //     {
+        //         var a = StartCoroutine(ActivateOrCreateChunk(toLoad[0]));
+        //         toLoad.RemoveAt(0);
+        //     }
+        // }
+        // else
+        // {
+        //     StartCoroutine(DelayedLoadChunks());
+        // }
         
 
         _prevPlayerChunk = curPlayerChunk;
+
+        if (init)
+        {
+            StartCoroutine(WaitSpawnPlayer());
+        }
+    }
+
+    IEnumerator WaitSpawnPlayer()
+    {
+        yield return new WaitUntil(() => toLoad.Count==0 && inLoadingChunk==0);
+        //Spawn player
+        int spawnX = Random.Range(0, RegionChunk.chunkSizeX);
+        int spawnZ = Random.Range(0, RegionChunk.chunkSizeZ);
+        float spawnY = SampleNoiseHeight((float)spawnX/(float)RegionChunk.chunkSizeX * scale, (float)spawnZ/(float)RegionChunk.chunkSizeZ * scale) + 3.5f;
+        print(spawnY);
+        playerGO = Instantiate(playerPrefab, new Vector3(spawnX, spawnY, spawnZ), Quaternion.identity);
+        playerTransform = playerGO.transform;
     }
 
     void DestroyChunk(List<Vector2Int> toDestroy)
@@ -175,7 +199,6 @@ public class TerrainGen : MonoBehaviour
                         y, chunkCoord.y * RegionChunk.chunkSizeZ + z - 1);
                 }
             }
-
             yield return new WaitForSeconds(0.05f);
         }
             
@@ -202,7 +225,8 @@ public class TerrainGen : MonoBehaviour
     {
         float sample = noise.snoise(new float2(x, y));
         float sampleNormd = (sample+1f)/2f;
-        int roundedRes = Mathf.RoundToInt(RegionChunk.chunkSizeY * 0.5f + sampleNormd * 0.5f * (RegionChunk.chunkSizeY * 0.5f));
+        int roundedRes = Mathf.RoundToInt(minGenerationHeight +
+                                          sampleNormd * heightScale * (RegionChunk.chunkSizeY - minGenerationHeight));
 
         return roundedRes;
     }

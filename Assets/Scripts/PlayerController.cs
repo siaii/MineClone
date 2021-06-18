@@ -54,7 +54,7 @@ public class PlayerController : MonoBehaviour
             _downVelocity.y += -gravityConst * Time.deltaTime;
         }
         
-        if (Input.GetButtonDown("Jump"))
+        if (Input.GetButtonDown("Jump") && _characterController.isGrounded)
         {
             _downVelocity.y = Mathf.Sqrt(Mathf.Abs(2*jumpHeight*gravityConst));
         }
