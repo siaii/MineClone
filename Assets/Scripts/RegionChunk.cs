@@ -109,7 +109,7 @@ public class RegionChunk : MonoBehaviour
         }
     }
     
-    IEnumerator CalculateDrawnMesh(int rChunkX,int rChunkY, int rChunkZ)
+    public IEnumerator CalculateDrawnMesh(int rChunkX,int rChunkY, int rChunkZ)
     {
         List<Vector3> vertices = new List<Vector3>();
         List<int> tris = new List<int>();

@@ -27,44 +27,50 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         _characterController = GetComponent<CharacterController>();
+
     }
 
     // Update is called once per frame
     void Update()
     {
-        Cursor.lockState = CursorLockMode.Locked;
-        Cursor.visible = false;
+        ProcessCamera();
+        ProcessMovement();
+    }
 
-        //Vertical rotation
-        rotationY -= Input.GetAxis("Mouse Y") * verticalSens * Time.deltaTime;
-        mainCam.transform.localRotation = Quaternion.Euler(new Vector3(rotationY, 0, 0));
-        
-        //Horizontal rotation
-        transform.Rotate(Vector3.up, Input.GetAxis("Mouse X") * horizontalSens * Time.deltaTime);
-        
+    private void ProcessMovement()
+    {
         Vector3 _playerVelocity =
             new Vector3(Input.GetAxis("Horizontal") * moveSpeed, 0, Input.GetAxis("Vertical") * moveSpeed);
         Vector3.ClampMagnitude(_playerVelocity, moveSpeed);
-        
+
         //Transform local direction vector into world vector
         _playerVelocity = transform.TransformDirection(_playerVelocity);
-        
+
         if (!_characterController.isGrounded)
         {
             _downVelocity.y += -gravityConst * Time.deltaTime;
         }
-        
+
         if (Input.GetButtonDown("Jump") && _characterController.isGrounded)
         {
-            _downVelocity.y = Mathf.Sqrt(Mathf.Abs(2*jumpHeight*gravityConst));
+            _downVelocity.y = Mathf.Sqrt(Mathf.Abs(2 * jumpHeight * gravityConst));
         }
-        
+
         //Clamp to terminal velocity
         _downVelocity.y = Mathf.Clamp(_downVelocity.y, playerTerminalVelocity, Mathf.Infinity);
 
         //Move takes in distance moved. Velocity times time equals distance
-        _characterController.Move((_downVelocity+_playerVelocity) * Time.deltaTime);
-        
+        _characterController.Move((_downVelocity + _playerVelocity) * Time.deltaTime);
+    }
 
+    private void ProcessCamera()
+    {
+        //Vertical rotation
+        rotationY -= Input.GetAxis("Mouse Y") * verticalSens * Time.deltaTime;
+        rotationY = Mathf.Clamp(rotationY, -90, 90);
+        mainCam.transform.localRotation = Quaternion.Euler(new Vector3(rotationY, 0, 0));
+
+        //Horizontal rotation
+        transform.Rotate(Vector3.up, Input.GetAxis("Mouse X") * horizontalSens * Time.deltaTime);
     }
 }

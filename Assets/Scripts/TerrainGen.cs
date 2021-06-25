@@ -11,7 +11,7 @@ using Random = UnityEngine.Random;
 public class TerrainGen : MonoBehaviour
 {
     [SerializeField] private Image noiseImage;
-    [SerializeField][Min(0.001f)] private float scale = 10;
+    [SerializeField][Min(0.001f)] public float scale = 10;
 
     [SerializeField][Min(100)] private int textureWidth = 100;
     [SerializeField][Min(100)] private int textureHeight = 100;
@@ -206,7 +206,7 @@ public class TerrainGen : MonoBehaviour
         inLoadingChunk--;
     }
 
-    Vector2Int ChunkFromPosition(Vector3 playerPosition)
+    public Vector2Int ChunkFromPosition(Vector3 playerPosition)
     {
         int x = Mathf.RoundToInt(playerPosition.x);
         int z = Mathf.RoundToInt(playerPosition.z);
@@ -275,5 +275,15 @@ public class TerrainGen : MonoBehaviour
             }
         }
         noiseTexture.Apply();
+    }
+
+    public RegionChunk GetRegionChunk(Vector2Int chunkID)
+    {
+        if (activeRegionChunks.ContainsKey(chunkID))
+        {
+            return activeRegionChunks[chunkID];
+        }
+        print("Chunk not found");
+        return null;
     }
 }
