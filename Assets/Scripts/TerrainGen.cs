@@ -206,7 +206,7 @@ public class TerrainGen : MonoBehaviour
         inLoadingChunk--;
     }
 
-    public Vector2Int ChunkFromPosition(Vector3 playerPosition)
+    public static Vector2Int ChunkFromPosition(Vector3 playerPosition)
     {
         int x = Mathf.RoundToInt(playerPosition.x);
         int z = Mathf.RoundToInt(playerPosition.z);

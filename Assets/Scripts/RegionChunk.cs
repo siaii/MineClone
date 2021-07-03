@@ -42,7 +42,7 @@ public class RegionChunk : MonoBehaviour
         {Sides.RIGHT, Vector3Int.right}
     };
 
-    private readonly Dictionary<BlockTypes, Block> blockTypesProperties = new Dictionary<BlockTypes, Block>()
+    public readonly Dictionary<BlockTypes, Block> blockTypesProperties = new Dictionary<BlockTypes, Block>()
     {
         {BlockTypes.GRASS, new Grass()},
         {BlockTypes.AIR, new Air()},
