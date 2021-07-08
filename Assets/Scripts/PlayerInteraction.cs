@@ -76,7 +76,7 @@ public class PlayerInteraction : MonoBehaviour
             StartCoroutine(collidedChunk.CalculateDrawnMesh(blockCoord.x / RenderChunk.xSize,
                 blockCoord.y / RenderChunk.ySize, blockCoord.z / RenderChunk.zSize));
 
-            if (collidedChunk
+            if (RegionChunk
                 .blockTypesProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]]
                 .isTransparent)
             {

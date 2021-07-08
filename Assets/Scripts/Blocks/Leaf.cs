@@ -1,4 +1,4 @@
-public class Stone : Block
+public class Leaf : Block
 {
     public override bool isTransparent => false;
 }

@@ -7,5 +7,7 @@ public enum BlockTypes
     AIR,
     GRASS,
     DIRT,
-    STONE
+    STONE,
+    WOOD,
+    LEAF
 }

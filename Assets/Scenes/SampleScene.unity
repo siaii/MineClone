@@ -623,6 +623,10 @@ MonoBehaviour:
     blockTexture: {fileID: 2800000, guid: 8d62a7ddc484ac842a58a194da5aeffd, type: 3}
   - blockType: 0
     blockTexture: {fileID: 0}
+  - blockType: 4
+    blockTexture: {fileID: 2800000, guid: e2bccd4b06aa7304eae62ae02eeb3b02, type: 3}
+  - blockType: 5
+    blockTexture: {fileID: 2800000, guid: 6dfcaa6b2eb72e2418399cf668cfa544, type: 3}
   renderChunkMaterial: {fileID: 2100000, guid: 27a16d40395637b40bcaa5e2ff73afda, type: 2}
 --- !u!1 &2074342129
 GameObject:
