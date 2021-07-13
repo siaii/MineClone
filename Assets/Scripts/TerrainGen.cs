@@ -5,20 +5,22 @@ using Unity.Mathematics;
 using UnityEditor;
 using UnityEditor.Animations;
 using UnityEngine;
+using UnityEngine.Serialization;
 using UnityEngine.UI;
 using Random = UnityEngine.Random;
 
 public class TerrainGen : MonoBehaviour
 {
     [SerializeField] private Image noiseImage;
-    [SerializeField][Min(0.001f)] public float scale = 10;
+    [FormerlySerializedAs("scale")] [SerializeField][Min(0.001f)] public float macroScale = 10;
+    [SerializeField] [Min(0.001f)] public float microScale = 5;
 
     [SerializeField][Min(100)] private int textureWidth = 100;
     [SerializeField][Min(100)] private int textureHeight = 100;
 
     [SerializeField] private float xOffset = 0;
     [SerializeField] private float yOffset = 0;
-    [SerializeField] private int seed;
+    [SerializeField] private int seed; //Not used yet
 
     [SerializeField] private GameObject regionChunkPrefab;
     [SerializeField] private GameObject playerPrefab;
@@ -26,7 +28,7 @@ public class TerrainGen : MonoBehaviour
     
     [SerializeField] private int renderDistance = 8;
     [SerializeField] private int minGenerationHeight = 32;
-    [SerializeField] private float heightScale = 0.7f;
+    [SerializeField][Range(0,1)] private float heightScale = 0.7f;
  
     private Texture2D noiseTexture;
 
@@ -42,7 +44,7 @@ public class TerrainGen : MonoBehaviour
 
     private int inLoadingChunk = 0;
 
-    private int maxSimultaneousChunkLoading = 3;
+    private int maxSimultaneousChunkLoading = 4;
 
     private GameObject playerGO;
     
@@ -95,19 +97,6 @@ public class TerrainGen : MonoBehaviour
         DestroyChunk(toDestroy);
         
         StartCoroutine(DelayedLoadChunks());
-        // if (init)
-        // {
-        //     while (toLoad.Count > 0)
-        //     {
-        //         var a = StartCoroutine(ActivateOrCreateChunk(toLoad[0]));
-        //         toLoad.RemoveAt(0);
-        //     }
-        // }
-        // else
-        // {
-        //     StartCoroutine(DelayedLoadChunks());
-        // }
-        
 
         _prevPlayerChunk = curPlayerChunk;
 
@@ -123,7 +112,7 @@ public class TerrainGen : MonoBehaviour
         //Spawn player
         int spawnX = Random.Range(0, RegionChunk.chunkSizeX);
         int spawnZ = Random.Range(0, RegionChunk.chunkSizeZ);
-        float spawnY = SampleNoiseHeight((float)spawnX/(float)RegionChunk.chunkSizeX * scale, (float)spawnZ/(float)RegionChunk.chunkSizeZ * scale) + 3.5f;
+        float spawnY = SampleNoiseHeight((float)spawnX/(float)RegionChunk.chunkSizeX, (float)spawnZ/(float)RegionChunk.chunkSizeZ) + 3.5f;
         print(spawnY);
         playerGO = Instantiate(playerPrefab, new Vector3(spawnX, spawnY, spawnZ), Quaternion.identity);
         playerTransform = playerGO.transform;
@@ -193,17 +182,50 @@ public class TerrainGen : MonoBehaviour
         {
             for (int z = 0; z < RegionChunk.chunkSizeZ + 2; z++)
             {
-                for (int y = 0; y < RegionChunk.chunkSizeY; y++)
+                int xPos = chunkCoord.x * RegionChunk.chunkSizeX + x - 1;
+                int zPos = chunkCoord.y * RegionChunk.chunkSizeZ + z - 1;
+                //Convert int coords to float with 1 chunk == 1 unit
+                float xCoord = (float) xPos / (float)RegionChunk.chunkSizeX;
+                float zCoord = (float) zPos / (float) RegionChunk.chunkSizeZ;
+
+                int groundHeight = SampleNoiseHeight(xCoord, zCoord);
+                int y;
+                for (y = 0; y < groundHeight - 2; y++)
                 {
-                    chunk.BlocksData[x][y][z] = GetBlockType(chunkCoord.x * RegionChunk.chunkSizeX + x - 1,
-                        y, chunkCoord.y * RegionChunk.chunkSizeZ + z - 1);
+                    chunk.BlocksData[x][y][z] = BlockTypes.STONE;
+                }
+
+                for (; y < groundHeight; y++)
+                {
+                    chunk.BlocksData[x][y][z] = BlockTypes.DIRT;
+                }
+
+                for (; y == groundHeight; y++)
+                {
+                    chunk.BlocksData[x][y][z] = BlockTypes.GRASS;
+                }
+
+                for (; y < RegionChunk.chunkSizeY; y++)
+                {
+                    chunk.BlocksData[x][y][z] = BlockTypes.AIR;
                 }
             }
-            yield return new WaitForSeconds(0.05f);
+            yield return new WaitForSeconds(0.03f);
         }
-            
+        
+        //Generate Trees ?
+        GenerateTrees();
+        
+
         yield return StartCoroutine(chunk.GenerateRenderChunks());
         inLoadingChunk--;
+    }
+
+    private void GenerateTrees()
+    {
+        //Seed the random generator
+        Random.InitState(seed);
+        float seedOffset = seed + Random.Range(0, seed);
     }
 
     public static Vector2Int ChunkFromPosition(Vector3 playerPosition)
@@ -223,20 +245,22 @@ public class TerrainGen : MonoBehaviour
 
     int SampleNoiseHeight(float x, float y)
     {
-        float sample = noise.snoise(new float2(x, y));
-        float sampleNormd = (sample+1f)/2f;
-        int roundedRes = Mathf.RoundToInt(minGenerationHeight +
-                                          sampleNormd * heightScale * (RegionChunk.chunkSizeY - minGenerationHeight));
+        float macroSample = (noise.snoise(new float2(x * macroScale, y * macroScale)) + 1f) / 2f; //Normalized to 0-1
+        int macroHeight = Mathf.RoundToInt(minGenerationHeight +
+                                          macroSample * heightScale * (RegionChunk.chunkSizeY - minGenerationHeight));
 
-        return roundedRes;
+        float microSample = noise.snoise(new float2((1000 + Mathf.Cos(1000) + x) * microScale, (1000 + Mathf.Sin(1000) +y) * microScale))/2f;
+        int microHeight = Mathf.RoundToInt(Mathf.Sign(microSample) * microSample * microSample * 4);
+        return macroHeight + microHeight;
     }
 
     BlockTypes GetBlockType(int xPos,int yPos, int zPos)
     {
         BlockTypes res = BlockTypes.AIR;
 
-        float xCoord = (float) xPos / (float)RegionChunk.chunkSizeX * scale;
-        float zCoord = (float) zPos / (float) RegionChunk.chunkSizeZ * scale;
+        //Convert int coords to float with 1 chunk == 1 unit
+        float xCoord = (float) xPos / (float)RegionChunk.chunkSizeX;
+        float zCoord = (float) zPos / (float) RegionChunk.chunkSizeZ;
 
         int groundHeight = SampleNoiseHeight(xCoord, zCoord);
 
@@ -256,25 +280,6 @@ public class TerrainGen : MonoBehaviour
         }
 
         return res;
-    }
-
-    public void CalcTexture()
-    {
-        seed = Random.Range(-100, 100);
-        noiseTexture = new Texture2D(textureWidth, textureHeight);
-        for (int i = -(renderDistance / 2)*RegionChunk.chunkSizeX; i <= (renderDistance / 2)*RegionChunk.chunkSizeX; i++)
-        {
-            for (int j = -(renderDistance / 2)*RegionChunk.chunkSizeZ; j < (renderDistance / 2)*RegionChunk.chunkSizeZ; j++)
-            {
-                float xCoord = xOffset + (float)i / noiseTexture.width * scale;
-                float yCoord = yOffset + (float)j / noiseTexture.height * scale;
-                
-                //Perlin noise repeats at integers, and returns a float value of 0-1
-                float sample = Mathf.PerlinNoise(xCoord, yCoord);
-                noiseTexture.SetPixel(i, j, new Color(sample, sample, sample));
-            }
-        }
-        noiseTexture.Apply();
     }
 
     public RegionChunk GetRegionChunk(Vector2Int chunkID)
