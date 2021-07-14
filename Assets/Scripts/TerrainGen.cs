@@ -20,7 +20,7 @@ public class TerrainGen : MonoBehaviour
 
     [SerializeField] private float xOffset = 0;
     [SerializeField] private float yOffset = 0;
-    [SerializeField] private int seed; //Not used yet
+    [SerializeField] private int seed;
 
     [SerializeField] private GameObject regionChunkPrefab;
     [SerializeField] private GameObject playerPrefab;
@@ -29,7 +29,9 @@ public class TerrainGen : MonoBehaviour
     [SerializeField] private int renderDistance = 8;
     [SerializeField] private int minGenerationHeight = 32;
     [SerializeField][Range(0,1)] private float heightScale = 0.7f;
- 
+    [SerializeField] private int maxTreePerChunk = 5;
+    [SerializeField] private float chunksWithTreesRatio = 0.4f;
+
     private Texture2D noiseTexture;
 
     private readonly Dictionary<Vector2Int, RegionChunk> activeRegionChunks = new Dictionary<Vector2Int, RegionChunk>();
@@ -112,8 +114,7 @@ public class TerrainGen : MonoBehaviour
         //Spawn player
         int spawnX = Random.Range(0, RegionChunk.chunkSizeX);
         int spawnZ = Random.Range(0, RegionChunk.chunkSizeZ);
-        float spawnY = SampleNoiseHeight((float)spawnX/(float)RegionChunk.chunkSizeX, (float)spawnZ/(float)RegionChunk.chunkSizeZ) + 3.5f;
-        print(spawnY);
+        float spawnY = SampleNoiseHeight((float)spawnX/(float)RegionChunk.chunkSizeX, (float)spawnZ/(float)RegionChunk.chunkSizeZ) + 2.5f;
         playerGO = Instantiate(playerPrefab, new Vector3(spawnX, spawnY, spawnZ), Quaternion.identity);
         playerTransform = playerGO.transform;
     }
@@ -214,18 +215,89 @@ public class TerrainGen : MonoBehaviour
         }
         
         //Generate Trees ?
-        GenerateTrees();
+        GenerateTrees(chunk, chunkCoord);
         
 
         yield return StartCoroutine(chunk.GenerateRenderChunks());
         inLoadingChunk--;
     }
 
-    private void GenerateTrees()
+    private void GenerateTrees(RegionChunk chunk, Vector2Int chunkCoord)
     {
         //Seed the random generator
-        Random.InitState(seed);
-        float seedOffset = seed + Random.Range(0, seed);
+        Random.InitState(seed + chunkCoord.x * chunkCoord.y);
+        float sample = noise.snoise(new float2(Mathf.Sqrt(seed) + chunkCoord.x, Mathf.Sqrt(seed) + chunkCoord.y));
+        if (sample > chunksWithTreesRatio)
+        {
+            List<Vector2Int> treeCoords = new List<Vector2Int>();
+            int treeCount = Random.Range(0, maxTreePerChunk+1);
+            for (int i = 0; i < treeCount; i++)
+            {
+                Random.InitState(seed + chunkCoord.x * chunkCoord.y + (i * 2 + 1));
+                int treeX = RegionChunk.chunkSizeX/2 + Mathf.RoundToInt((Random.insideUnitCircle.magnitude * (RegionChunk.chunkSizeX / 2 - 2) * Random.insideUnitCircle.normalized).x);
+                int treeZ = RegionChunk.chunkSizeZ/2 + Mathf.RoundToInt((Random.insideUnitCircle.magnitude * (RegionChunk.chunkSizeZ / 2 - 2) * Random.insideUnitCircle.normalized).y);
+                
+                //Don't generate if there is already another tree in a 3x3 centered on the generated coords
+                bool skip = false;
+                for (int a = -1; a <= 1; a++)
+                {
+                    for (int b = -1; b <= 1; b++)
+                    {
+                        if(treeCoords.Contains(new Vector2Int(treeX+a, treeZ+b)))
+                        {
+                            skip = true;
+                            break;
+                        }
+                    }
+                }
+
+                if (skip)
+                {
+                    continue;
+                }
+                
+                int treeHeight = Random.Range(4, 6);
+                
+                int y = RegionChunk.chunkSizeY - 1;
+                while (chunk.BlocksData[treeX + 1][y][treeZ + 1] == BlockTypes.AIR)
+                {
+                    y--;
+                }
+
+                y++; //Move one block up from the actual ground
+                for(int j=0; j<treeHeight; j++)
+                {
+                    chunk.BlocksData[treeX + 1][y+j][treeZ + 1] = BlockTypes.WOOD;
+                }
+                
+                //Generate leaves
+                Random.InitState(seed + chunkCoord.x * chunkCoord.y + (i * 2 + 1) + i + 10);
+                int leafStart = Random.Range(1, treeHeight/2);
+                
+                Random.InitState(seed + chunkCoord.x * chunkCoord.y + (i * 2 + 1) + i);
+                //Use 1-x^2 curve(?)
+                int leafHeight = Random.Range(treeHeight - leafStart, treeHeight + 1);
+                for (int c = leafStart; c <= leafStart + leafHeight; c++)
+                {
+                    for (int a = -2; a <= 2; a++)
+                    {
+                        for (int b = -2; b <= 2; b++)
+                        {
+                            if (a * a + (c - leafStart) + b * b <= leafHeight)
+                            {
+                                if (chunk.BlocksData[treeX + 1 + a][y + c][treeZ + 1 + b] == BlockTypes.AIR)
+                                {
+                                    chunk.BlocksData[treeX + 1 + a][y + c][treeZ + 1 + b] = BlockTypes.LEAF;
+                                }
+                            }           
+                        }
+                    }    
+                }
+                
+                
+                treeCoords.Add(new Vector2Int(treeX, treeZ));
+            }
+        }
     }
 
     public static Vector2Int ChunkFromPosition(Vector3 playerPosition)
@@ -250,7 +322,7 @@ public class TerrainGen : MonoBehaviour
                                           macroSample * heightScale * (RegionChunk.chunkSizeY - minGenerationHeight));
 
         float microSample = noise.snoise(new float2((1000 + Mathf.Cos(1000) + x) * microScale, (1000 + Mathf.Sin(1000) +y) * microScale))/2f;
-        int microHeight = Mathf.RoundToInt(Mathf.Sign(microSample) * microSample * microSample * 4);
+        int microHeight = Mathf.RoundToInt(Mathf.Sign(microSample) * microSample * microSample * 3);
         return macroHeight + microHeight;
     }
 
