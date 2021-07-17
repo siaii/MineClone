@@ -11,6 +11,8 @@ public class TexturePacker : MonoBehaviour
 
     [SerializeField] private Material renderChunkMaterial;
 
+    public Texture ResultTextureAtlas { get; private set; }
+
     void Awake()
     {
         packTextures();
@@ -34,6 +36,7 @@ public class TexturePacker : MonoBehaviour
         resTexture.filterMode = FilterMode.Point;
         resTexture.wrapMode = TextureWrapMode.Clamp;
         renderChunkMaterial.SetTexture("_BaseMap", resTexture);
+        ResultTextureAtlas = resTexture;
     }
 
     void generateTextureDictIdx()

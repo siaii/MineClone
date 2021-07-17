@@ -117,8 +117,8 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   mainCam: {fileID: 5287522422602703475}
-  verticalSens: 20
-  horizontalSens: 30
+  verticalSens: 30
+  horizontalSens: 40
   moveSpeed: 7
   playerTerminalVelocity: -20
   gravityConst: 9.8

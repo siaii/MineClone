@@ -5,16 +5,19 @@ using UnityEngine;
 public class PlayerInteraction : MonoBehaviour
 {
     private Camera _mainCamera;
-
     private Vector2 _cameraCenter;
-
+    
     private TerrainGen _terrainGen;
+    private PlayerInventory _playerInventory;
 
-    [SerializeField] private float maxHitDistance = 4f;
+    [SerializeField] private float maxHitDistance = 5f;
+
+    
     // Start is called before the first frame update
     void Start()
     {
         _terrainGen = FindObjectOfType<TerrainGen>();
+        _playerInventory = FindObjectOfType<PlayerInventory>();
         _mainCamera = Camera.main;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -53,6 +56,12 @@ public class PlayerInteraction : MonoBehaviour
                 }
                 else
                 {
+                    var placedBlockType = _playerInventory.InventoryItems[_playerInventory.ActiveItemIndex].PlacedBlock;
+                    if (placedBlockType == BlockTypes.NONE)
+                    {
+                        return;
+                    }
+                    
                     //Make sure the coordinate to get the block is the correct block, thus the +0.5f
                     adjustedHitCoord = hit.point + hit.normal * 0.5f;
                     //Local within chunk (0-15) block coordinate
@@ -63,8 +72,9 @@ public class PlayerInteraction : MonoBehaviour
                     {
                         collidedChunk = _terrainGen.GetRegionChunk(TerrainGen.ChunkFromPosition(adjustedHitCoord));
                     }
+
                     //Possibly keep the record of modified blocks in TerrainGen
-                    collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1] = BlockTypes.DIRT;
+                    collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1] = placedBlockType;
                 }
                 blockChange = true;
             }
