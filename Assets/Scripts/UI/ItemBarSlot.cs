@@ -4,7 +4,7 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(Image))]
-public class ItemBoxUI : MonoBehaviour
+public class ItemBarSlot : MonoBehaviour
 {
     [SerializeField] private Sprite inactiveItemBox;
     [SerializeField] private Sprite activeItemBox;

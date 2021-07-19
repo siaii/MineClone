@@ -11,7 +11,7 @@ public class PlayerInteraction : MonoBehaviour
     private PlayerInventory _playerInventory;
 
     [SerializeField] private float maxHitDistance = 5f;
-
+    [SerializeField] private InventoryView _inventoryView;
     
     // Start is called before the first frame update
     void Start()
@@ -27,6 +27,7 @@ public class PlayerInteraction : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //Consider giving cooldown to each block change
         ProcessMouseInput();
     }
 
@@ -36,7 +37,7 @@ public class PlayerInteraction : MonoBehaviour
         RegionChunk collidedChunk = null;
         Vector3Int blockCoord = new Vector3Int();
         Vector3 adjustedHitCoord = new Vector3();
-        if (Input.GetAxis("Fire1") > 0f || Input.GetAxis("Fire2") > 0f)
+        if ((Input.GetButton("Fire1") || Input.GetButton("Fire2")) && !_inventoryView.IsInventoryActive)
         {
             RaycastHit hit;
             Ray ray = _mainCamera.ScreenPointToRay(_cameraCenter);
@@ -56,7 +57,7 @@ public class PlayerInteraction : MonoBehaviour
                 }
                 else
                 {
-                    var placedBlockType = _playerInventory.InventoryItems[_playerInventory.ActiveItemIndex].PlacedBlock;
+                    var placedBlockType = _playerInventory.InventoryItems[_playerInventory.ActiveItemIndex].itemContained.PlacedBlock;
                     if (placedBlockType == BlockTypes.NONE)
                     {
                         return;
