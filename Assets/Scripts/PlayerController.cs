@@ -18,6 +18,8 @@ public class PlayerController : MonoBehaviour
     
     [SerializeField] private float jumpHeight = 1.125f;
 
+    [SerializeField] private InventoryView _inventoryView;
+
     private CharacterController _characterController;
     private Vector3 _playerVelocity;
     private Vector3 _downVelocity = new Vector3(0,0,0);
@@ -33,6 +35,9 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
+        //Don't process player movement and camera if inventory is active
+        if (_inventoryView.IsInventoryActive)
+            return;
         ProcessCamera();
         ProcessMovement();
     }
