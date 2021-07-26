@@ -4,6 +4,7 @@ using UnityEditor;
 using UnityEngine;
 using UnityEngine.EventSystems;
 using UnityEngine.Serialization;
+using UnityEngine.UI;
 using UnityEngine.UIElements;
 
 [RequireComponent(typeof(InventoryView))]
@@ -11,6 +12,7 @@ public class PlayerInventory : MonoBehaviour
 {
     private const int inventorySize = 28;
     private TexturePacker _texturePacker;
+    private EventSystem _eventSystem;
     private InventoryView _inventoryView;
     private InventoryItemSlot _holdItem = new InventoryItemSlot();
 
@@ -23,13 +25,17 @@ public class PlayerInventory : MonoBehaviour
     public int ActiveItemIndex => _activeItemIndex;
 
     [FormerlySerializedAs("_itemBar")] [SerializeField] private ItemBarSlot[] _itemBarSlots = new ItemBarSlot[7];
-
+    
     [SerializeField] private InventoryViewItemSlot[] _inventoryViewItemSlots = new InventoryViewItemSlot[inventorySize];
     [SerializeField] private HoldItemView holdItemView;
+    
+    [SerializeField] private GraphicRaycaster canvasRaycaster;
+    
     // Start is called before the first frame update
     void Start()
     {
         _texturePacker = FindObjectOfType<TexturePacker>();
+        _eventSystem = FindObjectOfType<EventSystem>();
         _inventoryView = GetComponent<InventoryView>();
         _holdItem.SetItemViewSlot(holdItemView);
         _holdItem.itemCount = 0; //Set default value to clear the placeholder value
@@ -102,37 +108,117 @@ public class PlayerInventory : MonoBehaviour
 
     private void ProcessNumberButton()
     {
-        int prevActive = _activeItemIndex;
-        if (Input.GetKey(KeyCode.Alpha1))
+        if (_inventoryView.IsInventoryActive)
         {
-            _activeItemIndex = 0;
-        }else if (Input.GetKey(KeyCode.Alpha2))
-        {
-            _activeItemIndex = 1;
-        }else if (Input.GetKey(KeyCode.Alpha3))
-        {
-            _activeItemIndex = 2;
-        }else if (Input.GetKey(KeyCode.Alpha4))
-        {
-            _activeItemIndex = 3;
-        }
-        else if (Input.GetKey(KeyCode.Alpha5))
-        {
-            _activeItemIndex = 4;
-        }else if (Input.GetKey(KeyCode.Alpha6))
-        {
-            _activeItemIndex = 5;
-        }else if (Input.GetKey(KeyCode.Alpha7))
-        {
-            _activeItemIndex = 6;
-        }
-
-        if (_activeItemIndex != prevActive)
-        {
-            for (int i = 0; i < _itemBarSlots.Length; i++)
+            int itemDestinationIdx = -1;
+            if (Input.GetKeyDown(KeyCode.Alpha1))
             {
-                _itemBarSlots[i].SetSelected(i==ActiveItemIndex);
+                itemDestinationIdx = 0;
+            }else if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                itemDestinationIdx = 1;
+            }else if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                itemDestinationIdx = 2;
+            }else if (Input.GetKeyDown(KeyCode.Alpha4))
+            {
+                itemDestinationIdx = 3;
             }
+            else if (Input.GetKeyDown(KeyCode.Alpha5))
+            {
+                itemDestinationIdx = 4;
+            }else if (Input.GetKeyDown(KeyCode.Alpha6))
+            {
+                itemDestinationIdx = 5;
+            }else if (Input.GetKeyDown(KeyCode.Alpha7))
+            {
+                itemDestinationIdx = 6;
+            }
+
+            if (itemDestinationIdx!=-1 && itemDestinationIdx<7)
+            {
+                PointerEventData pointerEventData = new PointerEventData(EventSystem.current);
+                pointerEventData.position = Input.mousePosition;
+
+                List<RaycastResult> results = new List<RaycastResult>();
+                
+                canvasRaycaster.Raycast(pointerEventData, results);
+
+                foreach (var res in results)
+                {
+                    if (res.gameObject.tag == "InvItemSlot")
+                    {
+                        int itemSlotIdx = res.gameObject.GetComponent<InventoryViewItemSlot>().InventoryItemSlotIndex;
+                        if (_inventoryItems[itemSlotIdx].itemContained != null)
+                        {
+                            bool swap = false;
+                            InventoryItem tempItem = new InventoryItem();
+                            int tempCount = -1;
+                            //Move or swap item to the idx
+                            if (_inventoryItems[itemDestinationIdx].itemContained != null)
+                            {
+                                tempItem = _inventoryItems[itemDestinationIdx].itemContained;
+                                tempCount = _inventoryItems[itemDestinationIdx].TakeItem(true);;
+                                swap = true;
+                            }
+
+                            _inventoryItems[itemDestinationIdx].PutItem(_inventoryItems[itemSlotIdx].itemContained,
+                                _inventoryItems[itemSlotIdx].TakeItem(true));
+
+                            if (swap)
+                            {
+                                if(tempCount>0)
+                                    _inventoryItems[itemSlotIdx].PutItem(tempItem, tempCount);
+                            }
+                            
+                            _itemBarSlots[itemDestinationIdx].UpdateItemImage(_inventoryItems[itemDestinationIdx].itemContained,
+                                _inventoryItems[itemDestinationIdx].itemCount);
+                            
+                            _itemBarSlots[itemSlotIdx].UpdateItemImage(_inventoryItems[itemSlotIdx].itemContained,
+                                _inventoryItems[itemSlotIdx].itemCount);
+                            
+                            break;    
+                        }
+                    }
+                }
+
+                
+            } 
+        }
+        else
+        {
+            int prevActive = _activeItemIndex;
+            if (Input.GetKeyDown(KeyCode.Alpha1))
+            {
+                _activeItemIndex = 0;
+            }else if (Input.GetKeyDown(KeyCode.Alpha2))
+            {
+                _activeItemIndex = 1;
+            }else if (Input.GetKeyDown(KeyCode.Alpha3))
+            {
+                _activeItemIndex = 2;
+            }else if (Input.GetKeyDown(KeyCode.Alpha4))
+            {
+                _activeItemIndex = 3;
+            }
+            else if (Input.GetKeyDown(KeyCode.Alpha5))
+            {
+                _activeItemIndex = 4;
+            }else if (Input.GetKeyDown(KeyCode.Alpha6))
+            {
+                _activeItemIndex = 5;
+            }else if (Input.GetKeyDown(KeyCode.Alpha7))
+            {
+                _activeItemIndex = 6;
+            }
+
+            if (_activeItemIndex != prevActive)
+            {
+                for (int i = 0; i < _itemBarSlots.Length; i++)
+                {
+                    _itemBarSlots[i].SetSelected(i==ActiveItemIndex);
+                }
+            }   
         }
     }
 
@@ -141,7 +227,7 @@ public class PlayerInventory : MonoBehaviour
         //Take item
         if (_holdItem.itemContained == null)
         {
-            if (_inventoryItems[itemSlotIndex].itemContained != null)
+            if (_inventoryItems[itemSlotIndex].itemContained != null && !Input.GetKey(KeyCode.LeftShift))
             {
                 _holdItem.itemContained = _inventoryItems[itemSlotIndex].itemContained;
             }
@@ -150,8 +236,56 @@ public class PlayerInventory : MonoBehaviour
             switch (mouseClickButton)
             {
                 case PointerEventData.InputButton.Left:
-                    resCount = _inventoryItems[itemSlotIndex].TakeItem(true);
+                {
+                    if (Input.GetKey(KeyCode.LeftShift))
+                    {
+                        int swapIdx = -1;
+                        if (itemSlotIndex < 7)
+                        {
+                            for (int i = 7; i < inventorySize; i++)
+                            {
+                                if (_inventoryItems[i].itemContained == null)
+                                {
+                                    swapIdx = i;
+                                    break;
+                                }
+                            }
+                        }
+                        else
+                        {
+                            for (int i = 0; i < 7; i++)
+                            {
+                                if (_inventoryItems[i].itemContained == null)
+                                {
+                                    swapIdx = i;
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (swapIdx != -1)
+                        {
+                            _inventoryItems[swapIdx].PutItem(_inventoryItems[itemSlotIndex].itemContained,
+                                _inventoryItems[itemSlotIndex].itemCount);
+                                    
+                            _inventoryItems[itemSlotIndex].TakeItem(true);
+                        }
+
+                        if (swapIdx < 7)
+                        {
+                            _itemBarSlots[swapIdx].UpdateItemImage(_inventoryItems[swapIdx].itemContained, _inventoryItems[swapIdx].itemCount);
+                        }
+                        else if (itemSlotIndex < 7)
+                        {
+                            _itemBarSlots[itemSlotIndex].UpdateItemImage(_inventoryItems[itemSlotIndex].itemContained, _inventoryItems[itemSlotIndex].itemCount);
+                        }
+                    }
+                    else
+                    {
+                        resCount = _inventoryItems[itemSlotIndex].TakeItem(true);
+                    }
                     break;
+                }
                 case PointerEventData.InputButton.Right:
                     resCount = _inventoryItems[itemSlotIndex].TakeItem(false);
                     break;

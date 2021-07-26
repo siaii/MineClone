@@ -338,6 +338,7 @@ MonoBehaviour:
   - {fileID: 5904332613441118299}
   - {fileID: 7109883960770853152}
   holdItemView: {fileID: 4820386587750443959}
+  canvasRaycaster: {fileID: 72126938}
 --- !u!114 &4041948128877387073
 MonoBehaviour:
   m_ObjectHideFlags: 0

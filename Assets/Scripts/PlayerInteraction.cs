@@ -57,6 +57,11 @@ public class PlayerInteraction : MonoBehaviour
                 }
                 else
                 {
+                    if (_playerInventory.InventoryItems[_playerInventory.ActiveItemIndex].itemContained == null ||
+                        _playerInventory.InventoryItems[_playerInventory.ActiveItemIndex].itemCount == 0)
+                    {
+                        return;
+                    }
                     var placedBlockType = _playerInventory.InventoryItems[_playerInventory.ActiveItemIndex].itemContained.PlacedBlock;
                     if (placedBlockType == BlockTypes.NONE)
                     {
