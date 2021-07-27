@@ -31,6 +31,8 @@ public class RegionChunk : MonoBehaviour
 
     private TerrainGen _terrainGen;
     private TexturePacker _texturePacker;
+
+    public Coroutine renderCoroutine;
     
     private readonly Dictionary<Sides, Vector3Int> sideVector = new Dictionary<Sides, Vector3Int>()
     {
@@ -87,6 +89,20 @@ public class RegionChunk : MonoBehaviour
         
     }
 
+    public void ClearRenderMesh()
+    {
+        for (int x = 0; x < chunkData.Length; x++)
+        {
+            for (int y = 0; y < chunkData[x].Length; y++)
+            {
+                for (int z = 0; z < chunkData[x][y].Length; z++)
+                {
+                    chunkData[x][y][z].BuildMesh(new Vector3[0], new int[0], new Vector2[0]);
+                }
+            }
+        }
+    }
+
     public IEnumerator GenerateRenderChunks()
     {
         for (int x = 0; x < chunkSizeX / RenderChunk.xSize; x++)
@@ -104,7 +120,14 @@ public class RegionChunk : MonoBehaviour
                         chunkData[x][y][z] = renderChunkScript;
                     }
 
-                    StartCoroutine(CalculateDrawnMesh(x, y, z));
+                    if (this.gameObject.activeSelf)
+                    {
+                        renderCoroutine  = StartCoroutine(CalculateDrawnMesh(x, y, z));
+                    }
+                    else
+                    {
+                        yield break;
+                    }
                     yield return null;
                 }
             }

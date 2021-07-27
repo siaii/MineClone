@@ -15,7 +15,7 @@ RenderSettings:
   m_ObjectHideFlags: 0
   serializedVersion: 9
   m_Fog: 1
-  m_FogColor: {r: 0.65080994, g: 0.666729, b: 0.7075472, a: 1}
+  m_FogColor: {r: 0.76862746, g: 0.9137255, b: 0.9882353, a: 1}
   m_FogMode: 1
   m_FogDensity: 0.05
   m_LinearFogStart: 96
@@ -373,7 +373,7 @@ MonoBehaviour:
   regionChunkPrefab: {fileID: 8017198263036184829, guid: 410d204f85242a448a5490bc25866a4e, type: 3}
   playerPrefab: {fileID: 5287522421205559365, guid: e7b1f54cb2ac9ee49a59c1b1100e1fed, type: 3}
   playerTransform: {fileID: 5287522421205559385, guid: e7b1f54cb2ac9ee49a59c1b1100e1fed, type: 3}
-  renderDistance: 1
+  renderDistance: 8
   minGenerationHeight: 32
   heightScale: 0.309
   maxTreePerChunk: 5

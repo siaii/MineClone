@@ -136,7 +136,7 @@ public class TerrainGen : MonoBehaviour
             {
                 inactiveBlocksData.Add(chunkCoord, activeRegionChunks[chunkCoord].BlocksData);
             }
-
+            StopCoroutine(activeRegionChunks[chunkCoord].renderCoroutine);            
             activeRegionChunks[chunkCoord].gameObject.SetActive(false);
             activeRegionChunks.Remove(chunkCoord);
         }
@@ -165,10 +165,12 @@ public class TerrainGen : MonoBehaviour
         }
         
         RegionChunk chunk;
+        bool fromPooled = false;
         if (pooledRegionChunks.Count > 0)
         {
             chunk = pooledRegionChunks[0];
             pooledRegionChunks.RemoveAt(0);
+            fromPooled = true;
         }
         else
         {
@@ -179,6 +181,10 @@ public class TerrainGen : MonoBehaviour
         chunk.transform.position = new Vector3(chunkCoord.x * RegionChunk.chunkSizeX, 0,
             chunkCoord.y * RegionChunk.chunkSizeZ);
         activeRegionChunks.Add(chunkCoord, chunk);
+        if (fromPooled)
+        {
+            chunk.ClearRenderMesh();
+        }
         for (int x = 0; x < RegionChunk.chunkSizeX + 2; x++)
         {
             for (int z = 0; z < RegionChunk.chunkSizeZ + 2; z++)
@@ -214,11 +220,12 @@ public class TerrainGen : MonoBehaviour
             yield return new WaitForSeconds(0.03f);
         }
         
-        //Generate Trees ?
-        GenerateTrees(chunk, chunkCoord);
+        if (chunk.enabled)
+        {
+            GenerateTrees(chunk, chunkCoord);
         
-
-        yield return StartCoroutine(chunk.GenerateRenderChunks());
+            yield return StartCoroutine(chunk.GenerateRenderChunks());
+        }
         inLoadingChunk--;
     }
 
