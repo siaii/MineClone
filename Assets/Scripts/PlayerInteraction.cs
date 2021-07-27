@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -10,8 +11,12 @@ public class PlayerInteraction : MonoBehaviour
     private TerrainGen _terrainGen;
     private PlayerInventory _playerInventory;
 
+    private Vector3Int prevLookedBlock;
+    private GameObject blockHighlight;
+
     [SerializeField] private float maxHitDistance = 5f;
     [SerializeField] private InventoryView _inventoryView;
+    [SerializeField] private GameObject blockHighlightPrefab;
     
     // Start is called before the first frame update
     void Start()
@@ -29,6 +34,43 @@ public class PlayerInteraction : MonoBehaviour
     {
         //Consider giving cooldown to each block change
         ProcessMouseInput();
+        ProcessBlockHighlight();
+    }
+
+    void ProcessBlockHighlight()
+    {
+        RegionChunk collidedChunk = null;
+        Vector3Int blockCoord = new Vector3Int();
+        Vector3 adjustedHitCoord = new Vector3();
+        RaycastHit hit;
+        Ray ray = _mainCamera.ScreenPointToRay(_cameraCenter);
+        var hitSomething = Physics.Raycast(ray, out hit);
+        if (hitSomething && hit.distance < maxHitDistance)
+        {
+            //Make sure the coordinate to get the block is the correct block, thus the -0.5f
+            adjustedHitCoord = hit.point + hit.normal * -0.5f;
+            //Local within chunk (0-15) block coordinate
+            blockCoord = new Vector3Int(Mathf.RoundToInt(adjustedHitCoord.x), Mathf.RoundToInt(adjustedHitCoord.y),
+                Mathf.RoundToInt(adjustedHitCoord.z));
+
+            if (blockHighlight == null)
+            {
+                blockHighlight = Instantiate(blockHighlightPrefab);
+            }
+            if (prevLookedBlock == null || blockCoord != prevLookedBlock)
+            {
+                blockHighlight.transform.position = blockCoord;
+                blockHighlight.transform.rotation = Quaternion.identity;
+                prevLookedBlock = blockCoord;
+            } 
+        }
+        else
+        {
+            if (blockHighlight != null)
+            {
+                Destroy(blockHighlight);
+            }
+        }
     }
 
     void ProcessMouseInput()
