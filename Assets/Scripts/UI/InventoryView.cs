@@ -5,6 +5,9 @@ using UnityEngine;
 
 public class InventoryView : MonoBehaviour
 {
+    [SerializeField] private GameObject mainInventorySlots;
+    [SerializeField] private GameObject creativeItemSlots;
+    
     private bool isInventoryActive = false;
     public bool IsInventoryActive
     {
@@ -45,5 +48,11 @@ public class InventoryView : MonoBehaviour
                 Cursor.visible = false;
             }
         }
-    }   
+    }
+
+    public void SetInventoryTab(bool isMainInventory)
+    {
+        creativeItemSlots.SetActive(!isMainInventory);
+        mainInventorySlots.SetActive(isMainInventory);
+    }
 }

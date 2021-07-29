@@ -373,7 +373,7 @@ MonoBehaviour:
   regionChunkPrefab: {fileID: 8017198263036184829, guid: 410d204f85242a448a5490bc25866a4e, type: 3}
   playerPrefab: {fileID: 5287522421205559365, guid: e7b1f54cb2ac9ee49a59c1b1100e1fed, type: 3}
   playerTransform: {fileID: 5287522421205559385, guid: e7b1f54cb2ac9ee49a59c1b1100e1fed, type: 3}
-  renderDistance: 8
+  renderDistance: 1
   minGenerationHeight: 32
   heightScale: 0.309
   maxTreePerChunk: 5

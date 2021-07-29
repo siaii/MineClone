@@ -26,6 +26,10 @@ public abstract class InterfaceItemView : MonoBehaviour
 
     public void UpdateItemImage(InventoryItem itemContained, int itemCount)
     {
+        if (!_texturePacker)
+        {
+            _texturePacker = FindObjectOfType<TexturePacker>();
+        }
         var imageComponent = itemImageObject.GetComponent<Image>();
         if (itemContained == null || itemCount == 0)
         {
@@ -35,7 +39,6 @@ public abstract class InterfaceItemView : MonoBehaviour
         }
         
         //TODO Change the item textures both here and item bar
-        
         var textureIdx = _texturePacker.textureDictIndex[itemContained.PlacedBlock];
         var textureUVRect = _texturePacker.blockTextureRects[textureIdx];
 

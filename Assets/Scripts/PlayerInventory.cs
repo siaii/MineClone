@@ -17,7 +17,7 @@ public class PlayerInventory : MonoBehaviour
     private InventoryItemSlot _holdItem = new InventoryItemSlot();
 
     private InventoryItemSlot[] _inventoryItems = new InventoryItemSlot[inventorySize];
-
+    private InventoryCreativeItemSlot[] _creativeItemSlots = new InventoryCreativeItemSlot[5];
     public InventoryItemSlot[] InventoryItems => _inventoryItems;
 
     [Range(0,6)] private int _activeItemIndex = 0;
@@ -27,10 +27,12 @@ public class PlayerInventory : MonoBehaviour
     [FormerlySerializedAs("_itemBar")] [SerializeField] private ItemBarSlot[] _itemBarSlots = new ItemBarSlot[7];
     
     [SerializeField] private InventoryViewItemSlot[] _inventoryViewItemSlots = new InventoryViewItemSlot[inventorySize];
+    [SerializeField] private InventoryViewItemSlot[] _creativeViewItemSlots = new InventoryViewItemSlot[5];
     [SerializeField] private HoldItemView holdItemView;
     
     [SerializeField] private GraphicRaycaster canvasRaycaster;
-    
+
+
     // Start is called before the first frame update
     void Start()
     {
@@ -46,16 +48,32 @@ public class PlayerInventory : MonoBehaviour
             _inventoryViewItemSlots[i].SetSlotIndex(i);
             _inventoryItems[i].itemCount = 0;
         }
-        _inventoryItems[0].itemContained = new GrassBlockItem();
-        _inventoryItems[0].itemCount = 1;
-        _inventoryItems[1].itemContained = new DirtBlockItem();
-        _inventoryItems[1].itemCount = 1;
-        _inventoryItems[2].itemContained = new StoneBlockItem();
-        _inventoryItems[2].itemCount = 1;
-        _inventoryItems[3].itemContained = new WoodBlockItem();
-        _inventoryItems[3].itemCount = 1;
-        _inventoryItems[4].itemContained = new LeafBlockItem();
-        _inventoryItems[4].itemCount = 1;
+
+        _creativeItemSlots[0] = new InventoryCreativeItemSlot();
+        _creativeItemSlots[1] = new InventoryCreativeItemSlot();
+        _creativeItemSlots[2] = new InventoryCreativeItemSlot();
+        _creativeItemSlots[3] = new InventoryCreativeItemSlot();
+        _creativeItemSlots[4] = new InventoryCreativeItemSlot();
+        
+        for (int i = 0; i < _creativeItemSlots.Length; i++)
+        {
+            _creativeItemSlots[i].SetItemViewSlot(_creativeViewItemSlots[i]);
+            _creativeViewItemSlots[i].SetSlotIndex(i);
+        }
+        
+        _creativeItemSlots[0].itemContained = new GrassBlockItem();
+        _creativeItemSlots[0].itemCount = 1;
+        _creativeItemSlots[1].itemContained = new DirtBlockItem();
+        _creativeItemSlots[1].itemCount = 1;
+        _creativeItemSlots[2].itemContained = new StoneBlockItem();
+        _creativeItemSlots[2].itemCount = 1;
+        _creativeItemSlots[3].itemContained = new WoodBlockItem();
+        _creativeItemSlots[3].itemCount = 1;
+        _creativeItemSlots[4].itemContained = new LeafBlockItem();
+        _creativeItemSlots[4].itemCount = 1;
+
+
+        
         for (int i = 0; i < _itemBarSlots.Length; i++)
         {
             _itemBarSlots[i].UpdateItemImage(_inventoryItems[i].itemContained, _inventoryItems[i].itemCount);
@@ -222,14 +240,21 @@ public class PlayerInventory : MonoBehaviour
         }
     }
 
-    public void InventoryInteract(PointerEventData.InputButton mouseClickButton, int itemSlotIndex)
+    public void InventoryInteract(PointerEventData.InputButton mouseClickButton, int itemSlotIndex, bool isCreative = false)
     {
         //Take item
         if (_holdItem.itemContained == null)
         {
-            if (_inventoryItems[itemSlotIndex].itemContained != null && !Input.GetKey(KeyCode.LeftShift))
+            if ((_inventoryItems[itemSlotIndex].itemContained != null || isCreative) && !Input.GetKey(KeyCode.LeftShift))
             {
-                _holdItem.itemContained = _inventoryItems[itemSlotIndex].itemContained;
+                if (isCreative)
+                {
+                    _holdItem.itemContained = _creativeItemSlots[itemSlotIndex].itemContained;                    
+                }
+                else
+                {
+                    _holdItem.itemContained = _inventoryItems[itemSlotIndex].itemContained;    
+                }
             }
 
             int resCount = -1;
@@ -244,6 +269,7 @@ public class PlayerInventory : MonoBehaviour
                         {
                             for (int i = 7; i < inventorySize; i++)
                             {
+                                //Maybe can put a case for when the active inventory is creative inventory
                                 if (_inventoryItems[i].itemContained == null)
                                 {
                                     swapIdx = i;
@@ -282,20 +308,32 @@ public class PlayerInventory : MonoBehaviour
                     }
                     else
                     {
-                        resCount = _inventoryItems[itemSlotIndex].TakeItem(true);
+                        if (isCreative)
+                        {
+                            resCount = _creativeItemSlots[itemSlotIndex].TakeItem(true);
+                        }
+                        else
+                        {
+                            resCount = _inventoryItems[itemSlotIndex].TakeItem(true);                            
+                        }
                     }
                     break;
                 }
                 case PointerEventData.InputButton.Right:
-                    resCount = _inventoryItems[itemSlotIndex].TakeItem(false);
+                    if (isCreative)
+                    {
+                        resCount = _creativeItemSlots[itemSlotIndex].TakeItem(false);
+                    }
+                    else
+                    {
+                        resCount = _inventoryItems[itemSlotIndex].TakeItem(false);                        
+                    }
                     break;
-                default:
-                    _holdItem.itemContained = null;
-                    return;
             }
             
             if (resCount > 0)
             {
+                print(_holdItem.itemContained);
                 _holdItem.itemCount = resCount;
             }
             else
@@ -306,11 +344,9 @@ public class PlayerInventory : MonoBehaviour
         //Put item
         else
         {
-            print(itemSlotIndex);
-            print(_inventoryItems[itemSlotIndex].itemContained == null);
             if (_inventoryItems[itemSlotIndex].itemContained != null)
             {
-                return;
+                if(_inventoryItems[itemSlotIndex].itemContained!=_holdItem.itemContained) return;
             }
 
             int excessCount = 0;
@@ -326,6 +362,7 @@ public class PlayerInventory : MonoBehaviour
                 {
                     //Try to put 1
                     excessCount = _inventoryItems[itemSlotIndex].PutItem(_holdItem.itemContained, 1);
+                    excessCount += _holdItem.itemCount - 1;
                     break;
                 }
                 default:

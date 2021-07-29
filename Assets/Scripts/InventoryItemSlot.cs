@@ -1,20 +1,19 @@
 using System.Collections;
 using System.Collections.Generic;
-using UnityEngine;
 
 public class InventoryItemSlot
 {
-    private InterfaceItemView itemViewSlot;
+    protected InterfaceItemView itemViewSlot;
     private InventoryItem _itemContained;
     private int _itemCount = 0;
     public const int maxItemCount = 64;
-    public InventoryItem itemContained
+    public virtual InventoryItem itemContained
     {
         get => _itemContained;
         set => SetItemContained(value);
     }
 
-    public int itemCount
+    public virtual int itemCount
     {
         get => _itemCount;
         set => SetItemCount(value);
@@ -73,16 +72,23 @@ public class InventoryItemSlot
             return 0;
         }
         
-        int excess = 0;
-        itemCount += count;
+        int excess = count;
+        if (itemContained == item)
+        {
+            itemCount += count;
         
-        if (itemCount > maxItemCount) 
-        { 
-            excess = itemCount - maxItemCount; 
-            itemCount = maxItemCount;
+            if (itemCount > maxItemCount) 
+            { 
+                excess = itemCount - maxItemCount; 
+                itemCount = maxItemCount;
+            }
+            else
+            {
+                excess = 0;
+            }
+        
+            itemViewSlot.UpdateItemImage(itemContained, itemCount); 
         }
-        
-        itemViewSlot.UpdateItemImage(itemContained, itemCount); 
         return excess;
     }
 }
