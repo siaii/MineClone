@@ -242,19 +242,29 @@ public class PlayerInventory : MonoBehaviour
 
     public void InventoryInteract(PointerEventData.InputButton mouseClickButton, int itemSlotIndex, bool isCreative = false)
     {
+        InventoryItemSlot[] activeInventory;
+        if (isCreative)
+        {
+            activeInventory = _creativeItemSlots;
+        }
+        else
+        {
+            activeInventory = _inventoryItems;
+        }
         //Take item
         if (_holdItem.itemContained == null)
         {
-            if ((_inventoryItems[itemSlotIndex].itemContained != null || isCreative) && !Input.GetKey(KeyCode.LeftShift))
+            if ((activeInventory[itemSlotIndex].itemContained != null) && (!Input.GetKey(KeyCode.LeftShift) || isCreative))
             {
-                if (isCreative)
-                {
-                    _holdItem.itemContained = _creativeItemSlots[itemSlotIndex].itemContained;                    
-                }
-                else
-                {
-                    _holdItem.itemContained = _inventoryItems[itemSlotIndex].itemContained;    
-                }
+                _holdItem.itemContained = activeInventory[itemSlotIndex].itemContained;                    
+                // if (isCreative)
+                // {
+                //     _holdItem.itemContained = _creativeItemSlots[itemSlotIndex].itemContained;                    
+                // }
+                // else
+                // {
+                //     _holdItem.itemContained = _inventoryItems[itemSlotIndex].itemContained;    
+                // }
             }
 
             int resCount = -1;
@@ -262,78 +272,72 @@ public class PlayerInventory : MonoBehaviour
             {
                 case PointerEventData.InputButton.Left:
                 {
-                    if (Input.GetKey(KeyCode.LeftShift))
+                    if (!isCreative)
                     {
-                        int swapIdx = -1;
-                        if (itemSlotIndex < 7)
+                        if (Input.GetKey(KeyCode.LeftShift))
                         {
-                            for (int i = 7; i < inventorySize; i++)
+                            int swapIdx = -1;
+                            if (itemSlotIndex < 7)
                             {
-                                //Maybe can put a case for when the active inventory is creative inventory
-                                if (_inventoryItems[i].itemContained == null)
+                                for (int i = 7; i < inventorySize; i++)
                                 {
-                                    swapIdx = i;
-                                    break;
+                                    //Maybe can put a case for when the active inventory is creative inventory
+                                    if (_inventoryItems[i].itemContained == null)
+                                    {
+                                        swapIdx = i;
+                                        break;
+                                    }
                                 }
                             }
-                        }
-                        else
-                        {
-                            for (int i = 0; i < 7; i++)
+                            else
                             {
-                                if (_inventoryItems[i].itemContained == null)
+                                for (int i = 0; i < 7; i++)
                                 {
-                                    swapIdx = i;
-                                    break;
+                                    if (_inventoryItems[i].itemContained == null)
+                                    {
+                                        swapIdx = i;
+                                        break;
+                                    }
                                 }
                             }
-                        }
 
-                        if (swapIdx != -1)
-                        {
-                            _inventoryItems[swapIdx].PutItem(_inventoryItems[itemSlotIndex].itemContained,
-                                _inventoryItems[itemSlotIndex].itemCount);
+                            if (swapIdx != -1)
+                            {
+                                _inventoryItems[swapIdx].PutItem(_inventoryItems[itemSlotIndex].itemContained,
+                                    _inventoryItems[itemSlotIndex].itemCount);
                                     
-                            _inventoryItems[itemSlotIndex].TakeItem(true);
-                        }
+                                _inventoryItems[itemSlotIndex].TakeItem(true);
+                            }
 
-                        if (swapIdx < 7)
-                        {
-                            _itemBarSlots[swapIdx].UpdateItemImage(_inventoryItems[swapIdx].itemContained, _inventoryItems[swapIdx].itemCount);
+                            if (swapIdx < 7)
+                            {
+                                _itemBarSlots[swapIdx].UpdateItemImage(_inventoryItems[swapIdx].itemContained, _inventoryItems[swapIdx].itemCount);
+                            }
+                            else if (itemSlotIndex < 7)
+                            {
+                                _itemBarSlots[itemSlotIndex].UpdateItemImage(_inventoryItems[itemSlotIndex].itemContained, _inventoryItems[itemSlotIndex].itemCount);
+                            }
                         }
-                        else if (itemSlotIndex < 7)
+                        else 
                         {
-                            _itemBarSlots[itemSlotIndex].UpdateItemImage(_inventoryItems[itemSlotIndex].itemContained, _inventoryItems[itemSlotIndex].itemCount);
+                            resCount = activeInventory[itemSlotIndex].TakeItem(true);
                         }
+                        
                     }
-                    else
+                    else//if creative
                     {
-                        if (isCreative)
-                        {
-                            resCount = _creativeItemSlots[itemSlotIndex].TakeItem(true);
-                        }
-                        else
-                        {
-                            resCount = _inventoryItems[itemSlotIndex].TakeItem(true);                            
-                        }
+                        resCount = activeInventory[itemSlotIndex].TakeItem(Input.GetKey(KeyCode.LeftShift));
+                        
                     }
                     break;
                 }
                 case PointerEventData.InputButton.Right:
-                    if (isCreative)
-                    {
-                        resCount = _creativeItemSlots[itemSlotIndex].TakeItem(false);
-                    }
-                    else
-                    {
-                        resCount = _inventoryItems[itemSlotIndex].TakeItem(false);                        
-                    }
+                    resCount = activeInventory[itemSlotIndex].TakeItem(false);
                     break;
             }
-            
+            print(resCount);
             if (resCount > 0)
             {
-                print(_holdItem.itemContained);
                 _holdItem.itemCount = resCount;
             }
             else
@@ -344,9 +348,9 @@ public class PlayerInventory : MonoBehaviour
         //Put item
         else
         {
-            if (_inventoryItems[itemSlotIndex].itemContained != null)
+            if (activeInventory[itemSlotIndex].itemContained != null)
             {
-                if(_inventoryItems[itemSlotIndex].itemContained!=_holdItem.itemContained) return;
+                if(activeInventory[itemSlotIndex].itemContained!=_holdItem.itemContained && !isCreative) return;
             }
 
             int excessCount = 0;
@@ -355,13 +359,13 @@ public class PlayerInventory : MonoBehaviour
                 case PointerEventData.InputButton.Left:
                 {
                     //Try to put all
-                    excessCount = _inventoryItems[itemSlotIndex].PutItem(_holdItem.itemContained, _holdItem.itemCount);
+                    excessCount = activeInventory[itemSlotIndex].PutItem(_holdItem.itemContained, _holdItem.itemCount);
                     break;
                 }
                 case PointerEventData.InputButton.Right:
                 {
                     //Try to put 1
-                    excessCount = _inventoryItems[itemSlotIndex].PutItem(_holdItem.itemContained, 1);
+                    excessCount = activeInventory[itemSlotIndex].PutItem(_holdItem.itemContained, 1);
                     excessCount += _holdItem.itemCount - 1;
                     break;
                 }
@@ -375,7 +379,6 @@ public class PlayerInventory : MonoBehaviour
             {
                 _holdItem.itemContained = null;
             }
-            //Update image (?)
         }
 
         if (itemSlotIndex < 7)

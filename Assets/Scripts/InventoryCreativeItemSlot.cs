@@ -8,7 +8,7 @@ public class InventoryCreativeItemSlot : InventoryItemSlot
 {
     public override int TakeItem(bool takeAll)
     {
-        return Input.GetKeyDown(KeyCode.LeftShift) ? maxItemCount : 1;
+        return takeAll ? maxItemCount : 1;
     }
 
     public override int PutItem(InventoryItem item, int count)
