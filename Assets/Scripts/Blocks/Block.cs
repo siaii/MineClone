@@ -136,7 +136,7 @@ public abstract class Block
         return res;
     }
 
-    public virtual int[] GetSideTriangles()
+    public virtual int[] GetSideTriangles(Sides reqSides)
     {
         return _triangles;
     }

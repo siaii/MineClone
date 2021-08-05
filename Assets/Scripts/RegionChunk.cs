@@ -9,20 +9,20 @@ using Random = UnityEngine.Random;
 public class RegionChunk : MonoBehaviour
 {
     [SerializeField] private GameObject renderChunkPrefab;
-
+    [SerializeField] private GameObject waterChunkPrefab;
     
     public const int chunkSizeX = 16;
     public const int chunkSizeZ = 16;
-    public const int chunkSizeY = 64;
+    public const int chunkSizeY = 96;
     
-    public int minBlockHeightGenerated = 48;
 
     public BlockTypes[][][] BlocksData
     {
         get;
         set;
     } = new BlockTypes[chunkSizeX + 2][][];
-    private RenderChunk[][][] chunkData;
+    private RenderChunk[][][] _renderChunks;
+    private WaterChunk[][][] _waterChunks;
 
     private Vector2Int chunkPos;
 
@@ -51,7 +51,8 @@ public class RegionChunk : MonoBehaviour
         {BlockTypes.DIRT, new Dirt()},
         {BlockTypes.STONE, new Stone()},
         {BlockTypes.WOOD, new Wood()},
-        {BlockTypes.LEAF, new Leaf()}
+        {BlockTypes.LEAF, new Leaf()},
+        {BlockTypes.WATER, new Water()}
     };
 
 
@@ -67,13 +68,16 @@ public class RegionChunk : MonoBehaviour
                 BlocksData[i][j] = new BlockTypes[chunkSizeZ+2];
             }
         }
-        chunkData = new RenderChunk[chunkSizeX / RenderChunk.xSize][][];
+        _renderChunks = new RenderChunk[chunkSizeX / RenderChunk.xSize][][];
+        _waterChunks = new WaterChunk[chunkSizeX / WaterChunk.xSize][][];
         for (int i = 0; i < chunkSizeX / RenderChunk.xSize; i++)
         {
-            chunkData[i] = new RenderChunk[chunkSizeY / RenderChunk.ySize][];
+            _renderChunks[i] = new RenderChunk[chunkSizeY / RenderChunk.ySize][];
+            _waterChunks[i] = new WaterChunk[chunkSizeY / WaterChunk.ySize][];
             for (int j = 0; j < chunkSizeY / RenderChunk.ySize; j++)
             {
-                chunkData[i][j] = new RenderChunk[chunkSizeZ / RenderChunk.zSize];
+                _renderChunks[i][j] = new RenderChunk[chunkSizeZ / RenderChunk.zSize];
+                _waterChunks[i][j] = new WaterChunk[chunkSizeZ / WaterChunk.zSize];
             }
         }
     }
@@ -91,13 +95,14 @@ public class RegionChunk : MonoBehaviour
 
     public void ClearRenderMesh()
     {
-        for (int x = 0; x < chunkData.Length; x++)
+        for (int x = 0; x < _renderChunks.Length; x++)
         {
-            for (int y = 0; y < chunkData[x].Length; y++)
+            for (int y = 0; y < _renderChunks[x].Length; y++)
             {
-                for (int z = 0; z < chunkData[x][y].Length; z++)
+                for (int z = 0; z < _renderChunks[x][y].Length; z++)
                 {
-                    chunkData[x][y][z].BuildMesh(new Vector3[0], new int[0], new Vector2[0]);
+                    _renderChunks[x][y][z].BuildMesh(new Vector3[0], new int[0], new Vector2[0]);
+                    _waterChunks[x][y][z].BuildMesh(new Vector3[0], new int[0], new Vector2[0]);
                 }
             }
         }
@@ -111,13 +116,22 @@ public class RegionChunk : MonoBehaviour
             {
                 for (int y = 0; y < chunkSizeY / RenderChunk.ySize; y++)
                 {
-                    if (chunkData[x][y][z] == null)
+                    if (_renderChunks[x][y][z] == null)
                     {
                         GameObject renderChunkGO = Instantiate(renderChunkPrefab, this.transform);
                         RenderChunk renderChunkScript = renderChunkGO.GetComponent<RenderChunk>();
                         renderChunkGO.transform.localPosition = new Vector3(x * RenderChunk.xSize, y * RenderChunk.ySize,
                             z * RenderChunk.zSize);
-                        chunkData[x][y][z] = renderChunkScript;
+                        _renderChunks[x][y][z] = renderChunkScript;
+                    }
+
+                    if (_waterChunks[x][y][z] == null)
+                    {
+                        GameObject waterChunkGO = Instantiate(waterChunkPrefab, this.transform);
+                        WaterChunk waterChunkScript = waterChunkGO.GetComponent<WaterChunk>();
+                        waterChunkGO.transform.localPosition = new Vector3(x * WaterChunk.xSize, y * WaterChunk.ySize,
+                            z * WaterChunk.zSize);
+                        _waterChunks[x][y][z] = waterChunkScript;
                     }
 
                     if (this.gameObject.activeSelf)
@@ -139,6 +153,10 @@ public class RegionChunk : MonoBehaviour
         List<Vector3> vertices = new List<Vector3>();
         List<int> tris = new List<int>();
         List<Vector2> uvs = new List<Vector2>();
+
+        List<Vector3> waterVertices = new List<Vector3>();
+        List<int> waterTris = new List<int>();
+        List<Vector2> waterUvs = new List<Vector2>();
         
         int startX = rChunkX * RenderChunk.xSize + 1;
         int startY = rChunkY * RenderChunk.ySize;
@@ -155,20 +173,38 @@ public class RegionChunk : MonoBehaviour
                         Vector3Int checkBlock = new Vector3Int(x, y, z) + pair.Value;
 
                         if (checkBlock.y < 0 || checkBlock.y >= chunkSizeY ||
-                            CheckBlockIsTransparent(checkBlock))
+                            (CheckBlockIsTransparent(checkBlock) && CheckIsNotSameBlock(BlocksData[x][y][z], checkBlock)))
                         {
                             int localX = x - startX;
                             int localY = y - startY;
                             int localZ = z - startZ;
-                            int oldLength = vertices.Count;
-                            vertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(pair.Key, new Vector3(localX,localY,localZ)));
-                            
-                            uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], pair.Key));
-                            var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles();
-                            
-                            foreach (var offset in blockTris)
+                            int oldLength;
+                            if (BlocksData[x][y][z] == BlockTypes.WATER)
                             {
-                                tris.Add(oldLength+offset);
+                                oldLength = waterVertices.Count;
+                                waterVertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(pair.Key, new Vector3(localX,localY,localZ)));
+                            
+                                waterUvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], pair.Key));
+                                var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles(pair.Key);
+                                
+                                foreach (var offset in blockTris)
+                                {
+                                    waterTris.Add(oldLength+offset);
+                                }    
+                            }
+                            else
+                            {
+                                oldLength = vertices.Count;
+                                vertices.AddRange(blockTypesProperties[BlocksData[x][y][z]]
+                                    .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ)));
+
+                                uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], pair.Key));
+                                var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles(pair.Key);
+
+                                foreach (var offset in blockTris)
+                                {
+                                    tris.Add(oldLength + offset);
+                                }
                             }
                         }
                     }
@@ -176,8 +212,13 @@ public class RegionChunk : MonoBehaviour
             }
             yield return null;
         }
-        
-        chunkData[rChunkX][rChunkY][rChunkZ].BuildMesh(vertices.ToArray(), tris.ToArray(), uvs.ToArray());
+        _waterChunks[rChunkX][rChunkY][rChunkZ].BuildMesh(waterVertices.ToArray(), waterTris.ToArray(), waterUvs.ToArray());
+        _renderChunks[rChunkX][rChunkY][rChunkZ].BuildMesh(vertices.ToArray(), tris.ToArray(), uvs.ToArray());
+    }
+
+    private bool CheckIsNotSameBlock(BlockTypes currentBlockType, Vector3Int checkBlock)
+    {
+        return currentBlockType != BlocksData[checkBlock.x][checkBlock.y][checkBlock.z];
     }
 
     Vector2[] GetBlockSideUVs(BlockTypes type, Sides side)

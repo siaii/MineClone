@@ -44,5 +44,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   renderChunkPrefab: {fileID: 8326332346417255924, guid: 31e1a0c2665023345a7940639e3575db, type: 3}
-  _texturePacker: {fileID: 0}
-  minBlockHeightGenerated: 48
+  waterChunkPrefab: {fileID: 8878416747378243934, guid: fc923500142cf4c43800660ba4b5a4d4, type: 3}

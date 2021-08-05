@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
 using UnityEditor;
-using UnityEditor.Animations;
 using UnityEngine;
 using UnityEngine.Serialization;
 using UnityEngine.UI;
@@ -27,7 +26,7 @@ public class TerrainGen : MonoBehaviour
     [SerializeField] private Transform playerTransform;
     
     [SerializeField] private int renderDistance = 8;
-    [SerializeField] private int minGenerationHeight = 32;
+    [SerializeField] private int minGenerationHeight = 40;
     [SerializeField][Range(0,1)] private float heightScale = 0.7f;
     [SerializeField] private int maxTreePerChunk = 5;
     [SerializeField] private float chunksWithTreesRatio = 0.4f;

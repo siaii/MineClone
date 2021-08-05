@@ -10,5 +10,6 @@ public enum BlockTypes
     DIRT,
     STONE,
     WOOD,
-    LEAF
+    LEAF,
+    WATER
 }

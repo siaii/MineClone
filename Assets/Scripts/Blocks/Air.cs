@@ -75,7 +75,7 @@ public class Air : Block
         return res;
     }
     
-    public override int[] GetSideTriangles()
+    public override int[] GetSideTriangles(Sides reqSides)
     {
         return _triangles;
     }
