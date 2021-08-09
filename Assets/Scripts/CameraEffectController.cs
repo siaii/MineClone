@@ -5,35 +5,25 @@ using UnityEngine;
 
 public class CameraEffectController : MonoBehaviour
 {
-    [SerializeField] private GameObject TintLayer;
-
+    [SerializeField] private GameObject PostProcessingCollider;
     [SerializeField] private PlayerController _playerController;
 
-    private bool isTinted = false;
-    // Start is called before the first frame update
-    void Start()
+    private TerrainGen _terrainGen;
+
+    private void Start()
     {
-        
+        _terrainGen = FindObjectOfType<TerrainGen>();
     }
 
-    // Update is called once per frame
-    void Update()
+    private void Update()
     {
-        
+        Vector3 worldPos = transform.parent.TransformPoint(transform.localPosition);
+
+        SetWaterTint(_terrainGen.BlockTypeFromPosition(worldPos)==BlockTypes.WATER);
     }
 
-    private void SetWaterTint(bool isTinted)
+    public void SetWaterTint(bool isTinted)
     {
-        TintLayer.SetActive(isTinted);
-    }
-    private void OnTriggerEnter(Collider other)
-    {
-        print("a");
-        if (other.CompareTag("WaterChunk"))
-        {
-            isTinted = !isTinted;
-            SetWaterTint(isTinted);
-            
-        } 
+        PostProcessingCollider.SetActive(isTinted);
     }
 }

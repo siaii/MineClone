@@ -179,6 +179,7 @@ public class TerrainGen : MonoBehaviour
             chunk = curChunk.GetComponent<RegionChunk>();
         }
         chunk.gameObject.SetActive(true);
+        chunk.name = chunkCoord.x + "," + chunkCoord.y;
         chunk.transform.position = new Vector3(chunkCoord.x * RegionChunk.chunkSizeX, 0,
             chunkCoord.y * RegionChunk.chunkSizeZ);
         activeRegionChunks.Add(chunkCoord, chunk);
@@ -328,6 +329,16 @@ public class TerrainGen : MonoBehaviour
         int x = Mathf.RoundToInt(playerPosition.x);
         int z = Mathf.RoundToInt(playerPosition.z);
 
+        if (x < -1)
+        {
+            x += 1;
+        }
+
+        if (z < -1)
+        {
+            z += 1;
+        }
+
         int chunkX = x / RegionChunk.chunkSizeX;
         if (x < 0)
             chunkX -= 1;
@@ -336,6 +347,30 @@ public class TerrainGen : MonoBehaviour
             chunkZ -= 1;
 
         return new Vector2Int(chunkX, chunkZ);
+    }
+
+    public BlockTypes BlockTypeFromPosition(Vector3 playerPosition)
+    {
+        var chunkID = ChunkFromPosition(playerPosition);
+        if (activeRegionChunks.ContainsKey(chunkID))
+        {
+            var chunk = activeRegionChunks[chunkID];
+
+            int x = Mathf.RoundToInt(playerPosition.x) % RegionChunk.chunkSizeX;
+            int y = Mathf.RoundToInt(playerPosition.y) % RegionChunk.chunkSizeY;            
+            int z = Mathf.RoundToInt(playerPosition.z) % RegionChunk.chunkSizeZ;
+
+            if (x < 0)
+                x += RegionChunk.chunkSizeX;
+            
+
+            if (z < 0)
+                z += RegionChunk.chunkSizeZ;
+            
+            return chunk.BlocksData[x + 1][y][z + 1];
+        }
+        
+        return BlockTypes.NONE;
     }
 
     int SampleNoiseHeight(float x, float y)
