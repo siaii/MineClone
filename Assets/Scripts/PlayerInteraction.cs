@@ -115,6 +115,14 @@ public class PlayerInteraction : MonoBehaviour
                     adjustedHitCoord = hit.point + hit.normal * 0.5f;
                     //Local within chunk (0-15) block coordinate
                     blockCoord = WorldCoordToChunkBlockCoord(adjustedHitCoord);
+                    
+                    
+                    Vector3 castCenter = new Vector3(Mathf.RoundToInt(adjustedHitCoord.x), Mathf.RoundToInt(adjustedHitCoord.y),
+                        Mathf.RoundToInt(adjustedHitCoord.z));
+                    bool existsCollision = Physics.CheckBox(castCenter, new Vector3(0.48f, 0.48f, 0.48f));
+                    if(existsCollision)
+                        return;
+                    
                     //Check if the block coord is in another chunk
                     if (blockCoord.x == 0 || blockCoord.x == RegionChunk.chunkSizeX - 1 || blockCoord.z == 0 ||
                         blockCoord.z == RegionChunk.chunkSizeZ - 1)
