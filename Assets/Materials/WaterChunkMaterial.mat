@@ -21,14 +21,13 @@ Material:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_Name: WaterChunkMaterial
-  m_Shader: {fileID: 4800000, guid: 933532a4fcc9baf4fa0491de14d08ed7, type: 3}
+  m_Shader: {fileID: -6465566751694194690, guid: 54ad3a15caf8cad448aa958156bd41d8, type: 3}
   m_ShaderKeywords: _SPECULAR_SETUP
-  m_LightmapFlags: 4
+  m_LightmapFlags: 2
   m_EnableInstancingVariants: 0
   m_DoubleSidedGI: 0
-  m_CustomRenderQueue: 3000
-  stringTagMap:
-    RenderType: Transparent
+  m_CustomRenderQueue: -1
+  stringTagMap: {}
   disabledShaderPasses:
   - SHADOWCASTER
   m_SavedProperties:
@@ -91,6 +90,12 @@ Material:
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
     m_Floats:
+    - Vector1_09be267eaed844b39e31b25ecc022bf4: 0.2
+    - Vector1_3f67de2b2e954b1ba6efae20d0f8c852: 1
+    - Vector1_9d19f4c74b13423a9bec3b173da73825: 0.06
+    - Vector1_d3e7dff2034f4822bd985f2d686079a8: 15.15
+    - Vector1_de9371f0a82e4f4aa2e57518c158b143: 0.15
+    - Vector1_f1ea395f1efb4611b99581df253f65ea: 0.9
     - _AlphaClip: 0
     - _Blend: 0
     - _BumpScale: 1
@@ -108,7 +113,7 @@ Material:
     - _Metallic: 0
     - _OcclusionStrength: 1
     - _Parallax: 0.005
-    - _QueueOffset: 0
+    - _QueueOffset: -50
     - _ReceiveShadows: 1
     - _Smoothness: 0.391
     - _SmoothnessTextureChannel: 0
@@ -118,6 +123,8 @@ Material:
     - _WorkflowMode: 0
     - _ZWrite: 0
     m_Colors:
+    - Color_3b2bc41d2e624db2a3e530320f718226: {r: 0, g: 0.36078432, b: 0.5, a: 0}
+    - Color_e3ec3eca6b1042648ab2426da0f64887: {r: 0, g: 0.4440465, b: 0.8784314, a: 0}
     - _BaseColor: {r: 0.02616591, g: 0.6211652, b: 0.7924528, a: 0.7647059}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}

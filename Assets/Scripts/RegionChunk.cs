@@ -175,6 +175,7 @@ public class RegionChunk : MonoBehaviour
                         if (checkBlock.y < 0 || checkBlock.y >= chunkSizeY ||
                             (CheckBlockIsTransparent(checkBlock) && CheckIsNotSameBlock(BlocksData[x][y][z], checkBlock)))
                         {
+                            //TODO FIX Z-CONFLICT WITH SHADERS (?)
                             int localX = x - startX;
                             int localY = y - startY;
                             int localZ = z - startZ;
@@ -183,7 +184,6 @@ public class RegionChunk : MonoBehaviour
                             {
                                 oldLength = waterVertices.Count;
                                 waterVertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(pair.Key, new Vector3(localX,localY,localZ)));
-                            
                                 waterUvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], pair.Key));
                                 var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles(pair.Key);
                                 

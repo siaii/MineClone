@@ -1,3 +1,4 @@
+using System;
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
@@ -25,6 +26,14 @@ public class PlayerController : MonoBehaviour
     private Vector3 _downVelocity = new Vector3(0,0,0);
 
     private float rotationY = 0;
+
+    private bool isInWater = false;
+
+    public bool IsInWater
+    {
+        get => isInWater;
+        private set => isInWater = value;
+    }
     
     void Start()
     {
@@ -77,5 +86,21 @@ public class PlayerController : MonoBehaviour
 
         //Horizontal rotation
         transform.Rotate(Vector3.up, Input.GetAxis("Mouse X") * horizontalSens * Time.deltaTime);
+    }
+    
+    private void OnTriggerEnter(Collider other)
+    {
+        if (other.CompareTag("WaterChunk"))
+        {
+            IsInWater = true;
+        } 
+    }
+
+    private void OnTriggerExit(Collider other)
+    {
+        if (other.CompareTag("WaterChunk"))
+        {
+            IsInWater = false;
+        } 
     }
 }

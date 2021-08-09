@@ -30,7 +30,9 @@ public class TerrainGen : MonoBehaviour
     [SerializeField][Range(0,1)] private float heightScale = 0.7f;
     [SerializeField] private int maxTreePerChunk = 5;
     [SerializeField] private float chunksWithTreesRatio = 0.4f;
-
+    
+    public static int waterLevel = 44;
+    
     private Texture2D noiseTexture;
 
     private readonly Dictionary<Vector2Int, RegionChunk> activeRegionChunks = new Dictionary<Vector2Int, RegionChunk>();
@@ -206,9 +208,24 @@ public class TerrainGen : MonoBehaviour
                     chunk.BlocksData[x][y][z] = BlockTypes.DIRT;
                 }
 
-                for (; y == groundHeight; y++)
+                if (y < waterLevel-1)
+                {
+                    chunk.BlocksData[x][y][z] = BlockTypes.DIRT;
+                }
+                else
                 {
                     chunk.BlocksData[x][y][z] = BlockTypes.GRASS;
+                }
+
+                y++;
+                // for (; y == groundHeight; y++)
+                // {
+                //     chunk.BlocksData[x][y][z] = BlockTypes.GRASS;
+                // }
+
+                for (; y < waterLevel; y++)
+                {
+                    chunk.BlocksData[x][y][z] = BlockTypes.WATER;
                 }
 
                 for (; y < RegionChunk.chunkSizeY; y++)

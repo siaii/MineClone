@@ -13,9 +13,9 @@ GameObject:
   - component: {fileID: 2543212319938484238}
   - component: {fileID: 5620259313174320971}
   - component: {fileID: 6547851383509182840}
-  m_Layer: 0
+  m_Layer: 2
   m_Name: WaterChunk
-  m_TagString: Untagged
+  m_TagString: WaterChunk
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0

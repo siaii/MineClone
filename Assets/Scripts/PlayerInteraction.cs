@@ -26,12 +26,13 @@ public class PlayerInteraction : MonoBehaviour
         _mainCamera = Camera.main;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        _cameraCenter = new Vector2(_mainCamera.pixelWidth / 2, _mainCamera.pixelHeight / 2);
+        
     }
 
     // Update is called once per frame
     void Update()
     {
+        _cameraCenter = new Vector2(_mainCamera.pixelWidth / 2, _mainCamera.pixelHeight / 2);
         //Consider giving cooldown to each block change
         ProcessMouseInput();
         ProcessBlockHighlight();
