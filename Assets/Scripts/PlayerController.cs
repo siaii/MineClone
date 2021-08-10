@@ -18,6 +18,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private float gravityConst = 9.8f;
     
     [SerializeField] private float jumpHeight = 1.125f;
+    [SerializeField] private float waterSlowModifier = 0.7f;
 
     [SerializeField] private InventoryView _inventoryView;
 
@@ -25,9 +26,12 @@ public class PlayerController : MonoBehaviour
     private Vector3 _playerVelocity;
     private Vector3 _downVelocity = new Vector3(0,0,0);
 
+    private TerrainGen _terrainGen;
+
     private float rotationY = 0;
 
     private bool isInWater = false;
+    private bool lastFrameInWater = false;
 
     public bool IsInWater
     {
@@ -38,7 +42,7 @@ public class PlayerController : MonoBehaviour
     void Start()
     {
         _characterController = GetComponent<CharacterController>();
-
+        _terrainGen = FindObjectOfType<TerrainGen>();
     }
 
     // Update is called once per frame
@@ -47,8 +51,15 @@ public class PlayerController : MonoBehaviour
         //Don't process player movement and camera if inventory is active
         if (_inventoryView.IsInventoryActive)
             return;
+
         ProcessCamera();
         ProcessMovement();
+    }
+
+    private void FixedUpdate()
+    {
+        lastFrameInWater = isInWater;
+        isInWater = _terrainGen.BlockTypeFromPosition(transform.position) == BlockTypes.WATER;
     }
 
     private void ProcessMovement()
@@ -60,15 +71,34 @@ public class PlayerController : MonoBehaviour
         //Transform local direction vector into world vector
         _playerVelocity = transform.TransformDirection(_playerVelocity);
 
-        if (!_characterController.isGrounded)
+        if (isInWater)
         {
-            _downVelocity.y += -gravityConst * Time.deltaTime;
+            _playerVelocity *= waterSlowModifier;
         }
 
-        if (Input.GetButtonDown("Jump") && _characterController.isGrounded)
+        if (!_characterController.isGrounded)
         {
-            _downVelocity.y = Mathf.Sqrt(Mathf.Abs(2 * jumpHeight * gravityConst));
+            var change = -gravityConst * Time.deltaTime;
+            if (isInWater)
+                change *= waterSlowModifier * waterSlowModifier;
+            _downVelocity.y += change;
         }
+        
+        if (isInWater || lastFrameInWater)
+        {
+            if (Input.GetButton("Jump"))
+            {
+                _downVelocity.y = Mathf.Sqrt(Mathf.Abs(2 * jumpHeight * gravityConst)) * waterSlowModifier;
+            }
+        }
+        else
+        {
+            if (Input.GetButtonDown("Jump") && _characterController.isGrounded)
+            {
+                _downVelocity.y = Mathf.Sqrt(Mathf.Abs(2 * jumpHeight * gravityConst));
+            }
+        }
+        
 
         //Clamp to terminal velocity
         _downVelocity.y = Mathf.Clamp(_downVelocity.y, playerTerminalVelocity, Mathf.Infinity);
