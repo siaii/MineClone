@@ -52,7 +52,8 @@ public class RegionChunk : MonoBehaviour
         {BlockTypes.STONE, new Stone()},
         {BlockTypes.WOOD, new Wood()},
         {BlockTypes.LEAF, new Leaf()},
-        {BlockTypes.WATER, new Water()}
+        {BlockTypes.WATER_SOURCE, new Water_Flowing()},
+        {BlockTypes.WATER_FLOWING, new Water_Flowing()}
     };
 
 
@@ -180,7 +181,7 @@ public class RegionChunk : MonoBehaviour
                             int localY = y - startY;
                             int localZ = z - startZ;
                             int oldLength;
-                            if (BlocksData[x][y][z] == BlockTypes.WATER)
+                            if (BlocksData[x][y][z] == BlockTypes.WATER_SOURCE)
                             {
                                 oldLength = waterVertices.Count;
                                 waterVertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(pair.Key, new Vector3(localX,localY,localZ)));

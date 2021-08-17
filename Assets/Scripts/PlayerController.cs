@@ -59,7 +59,7 @@ public class PlayerController : MonoBehaviour
     private void FixedUpdate()
     {
         lastFrameInWater = isInWater;
-        isInWater = _terrainGen.BlockTypeFromPosition(transform.position) == BlockTypes.WATER;
+        isInWater = _terrainGen.BlockTypeFromPosition(transform.position) == BlockTypes.WATER_SOURCE;
     }
 
     private void ProcessMovement()

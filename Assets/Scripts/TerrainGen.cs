@@ -226,7 +226,7 @@ public class TerrainGen : MonoBehaviour
 
                 for (; y < waterLevel; y++)
                 {
-                    chunk.BlocksData[x][y][z] = BlockTypes.WATER;
+                    chunk.BlocksData[x][y][z] = BlockTypes.WATER_SOURCE;
                 }
 
                 for (; y < RegionChunk.chunkSizeY; y++)

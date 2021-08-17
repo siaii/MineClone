@@ -11,5 +11,6 @@ public enum BlockTypes
     STONE,
     WOOD,
     LEAF,
-    WATER
+    WATER_SOURCE,
+    WATER_FLOWING
 }
