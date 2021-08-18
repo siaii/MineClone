@@ -41,7 +41,7 @@ public class TerrainGen : MonoBehaviour
 
     private List<Vector2Int> toLoad = new List<Vector2Int>();
     
-    private Dictionary<Vector2Int, BlockTypes[][][]> inactiveBlocksData = new Dictionary<Vector2Int, BlockTypes[][][]>();
+    private Dictionary<Vector2Int, BlockData[][][]> inactiveBlocksData = new Dictionary<Vector2Int, BlockData[][][]>();
 
     private Vector2Int _prevPlayerChunk;
 
@@ -201,21 +201,21 @@ public class TerrainGen : MonoBehaviour
                 int y;
                 for (y = 0; y < groundHeight - 2; y++)
                 {
-                    chunk.BlocksData[x][y][z] = BlockTypes.STONE;
+                    chunk.BlocksData[x][y][z].BlockType = BlockTypes.STONE;
                 }
 
                 for (; y < groundHeight; y++)
                 {
-                    chunk.BlocksData[x][y][z] = BlockTypes.DIRT;
+                    chunk.BlocksData[x][y][z].BlockType = BlockTypes.DIRT;
                 }
 
                 if (y < waterLevel-1)
                 {
-                    chunk.BlocksData[x][y][z] = BlockTypes.DIRT;
+                    chunk.BlocksData[x][y][z].BlockType = BlockTypes.DIRT;
                 }
                 else
                 {
-                    chunk.BlocksData[x][y][z] = BlockTypes.GRASS;
+                    chunk.BlocksData[x][y][z].BlockType = BlockTypes.GRASS;
                 }
 
                 y++;
@@ -226,12 +226,12 @@ public class TerrainGen : MonoBehaviour
 
                 for (; y < waterLevel; y++)
                 {
-                    chunk.BlocksData[x][y][z] = BlockTypes.WATER_SOURCE;
+                    chunk.BlocksData[x][y][z].BlockType = BlockTypes.WATER_SOURCE;
                 }
 
                 for (; y < RegionChunk.chunkSizeY; y++)
                 {
-                    chunk.BlocksData[x][y][z] = BlockTypes.AIR;
+                    chunk.BlocksData[x][y][z].BlockType = BlockTypes.AIR;
                 }
             }
             yield return new WaitForSeconds(0.03f);
@@ -283,7 +283,7 @@ public class TerrainGen : MonoBehaviour
                 int treeHeight = Random.Range(4, 6);
                 
                 int y = RegionChunk.chunkSizeY - 1;
-                while (chunk.BlocksData[treeX + 1][y][treeZ + 1] == BlockTypes.AIR)
+                while (chunk.BlocksData[treeX + 1][y][treeZ + 1].BlockType == BlockTypes.AIR)
                 {
                     y--;
                 }
@@ -291,7 +291,7 @@ public class TerrainGen : MonoBehaviour
                 y++; //Move one block up from the actual ground
                 for(int j=0; j<treeHeight; j++)
                 {
-                    chunk.BlocksData[treeX + 1][y+j][treeZ + 1] = BlockTypes.WOOD;
+                    chunk.BlocksData[treeX + 1][y+j][treeZ + 1].BlockType = BlockTypes.WOOD;
                 }
                 
                 //Generate leaves
@@ -309,9 +309,9 @@ public class TerrainGen : MonoBehaviour
                         {
                             if (a * a + (c - leafStart) + b * b <= leafHeight)
                             {
-                                if (chunk.BlocksData[treeX + 1 + a][y + c][treeZ + 1 + b] == BlockTypes.AIR)
+                                if (chunk.BlocksData[treeX + 1 + a][y + c][treeZ + 1 + b].BlockType == BlockTypes.AIR)
                                 {
-                                    chunk.BlocksData[treeX + 1 + a][y + c][treeZ + 1 + b] = BlockTypes.LEAF;
+                                    chunk.BlocksData[treeX + 1 + a][y + c][treeZ + 1 + b].BlockType = BlockTypes.LEAF;
                                 }
                             }           
                         }
@@ -367,7 +367,7 @@ public class TerrainGen : MonoBehaviour
             if (z < 0)
                 z += RegionChunk.chunkSizeZ;
             
-            return chunk.BlocksData[x + 1][y][z + 1];
+            return chunk.BlocksData[x + 1][y][z + 1].BlockType;
         }
         
         return BlockTypes.NONE;

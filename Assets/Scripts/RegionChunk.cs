@@ -1,10 +1,6 @@
-using System;
 using System.Collections;
 using System.Collections.Generic;
-using Unity.Mathematics;
-using UnityEditor.PackageManager.UI;
 using UnityEngine;
-using Random = UnityEngine.Random;
 
 public class RegionChunk : MonoBehaviour
 {
@@ -15,12 +11,11 @@ public class RegionChunk : MonoBehaviour
     public const int chunkSizeZ = 16;
     public const int chunkSizeY = 96;
     
-
-    public BlockTypes[][][] BlocksData
+    public BlockData[][][] BlocksData
     {
         get;
         set;
-    } = new BlockTypes[chunkSizeX + 2][][];
+    } = new BlockData[chunkSizeX + 2][][];
     private RenderChunk[][][] _renderChunks;
     private WaterChunk[][][] _waterChunks;
 
@@ -63,10 +58,14 @@ public class RegionChunk : MonoBehaviour
         _terrainGen = FindObjectOfType<TerrainGen>();
         for (int i = 0; i < chunkSizeX+2; i++)
         {
-            BlocksData[i] = new BlockTypes[chunkSizeY][];
+            BlocksData[i] = new BlockData[chunkSizeY][];
             for (int j = 0; j < chunkSizeY; j++)
             {
-                BlocksData[i][j] = new BlockTypes[chunkSizeZ+2];
+                BlocksData[i][j] = new BlockData[chunkSizeZ+2];
+                for (int k = 0; k < chunkSizeZ + 2; k++)
+                {
+                    BlocksData[i][j][k] = new BlockData();
+                }
             }
         }
         _renderChunks = new RenderChunk[chunkSizeX / RenderChunk.xSize][][];
@@ -174,19 +173,18 @@ public class RegionChunk : MonoBehaviour
                         Vector3Int checkBlock = new Vector3Int(x, y, z) + pair.Value;
 
                         if (checkBlock.y < 0 || checkBlock.y >= chunkSizeY ||
-                            (CheckBlockIsTransparent(checkBlock) && CheckIsNotSameBlock(BlocksData[x][y][z], checkBlock)))
+                            (CheckBlockIsTransparent(checkBlock) && CheckIsNotSameBlock(BlocksData[x][y][z].BlockType, checkBlock)))
                         {
-                            //TODO FIX Z-CONFLICT WITH SHADERS (?)
                             int localX = x - startX;
                             int localY = y - startY;
                             int localZ = z - startZ;
                             int oldLength;
-                            if (BlocksData[x][y][z] == BlockTypes.WATER_SOURCE)
+                            if (BlocksData[x][y][z].BlockType == BlockTypes.WATER_SOURCE)
                             {
                                 oldLength = waterVertices.Count;
-                                waterVertices.AddRange(blockTypesProperties[BlocksData[x][y][z]].GetSideVertices(pair.Key, new Vector3(localX,localY,localZ)));
-                                waterUvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], pair.Key));
-                                var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles(pair.Key);
+                                waterVertices.AddRange(blockTypesProperties[BlocksData[x][y][z].BlockType].GetSideVertices(pair.Key, new Vector3(localX,localY,localZ)));
+                                waterUvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z].BlockType, pair.Key));
+                                var blockTris = blockTypesProperties[BlocksData[x][y][z].BlockType].GetSideTriangles(pair.Key);
                                 
                                 foreach (var offset in blockTris)
                                 {
@@ -196,11 +194,11 @@ public class RegionChunk : MonoBehaviour
                             else
                             {
                                 oldLength = vertices.Count;
-                                vertices.AddRange(blockTypesProperties[BlocksData[x][y][z]]
+                                vertices.AddRange(blockTypesProperties[BlocksData[x][y][z].BlockType]
                                     .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ)));
 
-                                uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z], pair.Key));
-                                var blockTris = blockTypesProperties[BlocksData[x][y][z]].GetSideTriangles(pair.Key);
+                                uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z].BlockType, pair.Key, BlocksData[x][y][z].UpDirection));
+                                var blockTris = blockTypesProperties[BlocksData[x][y][z].BlockType].GetSideTriangles(pair.Key);
 
                                 foreach (var offset in blockTris)
                                 {
@@ -219,12 +217,12 @@ public class RegionChunk : MonoBehaviour
 
     private bool CheckIsNotSameBlock(BlockTypes currentBlockType, Vector3Int checkBlock)
     {
-        return currentBlockType != BlocksData[checkBlock.x][checkBlock.y][checkBlock.z];
+        return currentBlockType != BlocksData[checkBlock.x][checkBlock.y][checkBlock.z].BlockType;
     }
 
-    Vector2[] GetBlockSideUVs(BlockTypes type, Sides side)
+    Vector2[] GetBlockSideUVs(BlockTypes type, Sides side, Sides upDirection = Sides.UP)
     {
-        var localUV = blockTypesProperties[type].GetSideUVs(side);
+        var localUV = blockTypesProperties[type].GetSideUVs(side, upDirection);
         Vector2[] res = new Vector2[localUV.Length];
         var textureRect = _texturePacker.blockTextureRects[_texturePacker.textureDictIndex[type]];
 
@@ -241,7 +239,7 @@ public class RegionChunk : MonoBehaviour
     {
         if (coord.y < 0 || coord.y >= chunkSizeY)
             return true;
-        return blockTypesProperties[BlocksData[coord.x][coord.y][coord.z]].isTransparent;
+        return blockTypesProperties[BlocksData[coord.x][coord.y][coord.z].BlockType].isTransparent;
     }
 
     public void SetChunkPos(int x, int z)

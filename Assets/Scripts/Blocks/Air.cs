@@ -1,4 +1,3 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -65,7 +64,7 @@ public class Air : Block
         }
     };
     
-    public override Vector3[] GetSideVertices(Sides reqSides, Vector3 blockPos)
+    public override Vector3[] GetSideVertices(Sides reqSides, Vector3 blockPos, Sides frontDirection = Sides.FRONT)
     {
         Vector3[] res = (Vector3[])_verticesBase[reqSides].Clone();
         for(int i=0; i<res.Length; i++)
@@ -80,7 +79,7 @@ public class Air : Block
         return _triangles;
     }
     
-    public override Vector2[] GetSideUVs(Sides reqSides)
+    public override Vector2[] GetSideUVs(Sides reqSides, Sides upDirection = Sides.FRONT)
     {
         return _uvMap[reqSides];
     }

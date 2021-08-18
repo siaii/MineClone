@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerInteraction : MonoBehaviour
@@ -14,10 +11,13 @@ public class PlayerInteraction : MonoBehaviour
     private Vector3Int prevLookedBlock;
     private GameObject blockHighlight;
 
+    private float delayTimer;
+
+    [SerializeField] private float mouseInputDelay = 0.05f; //Delay between mouse input being processed
     [SerializeField] private float maxHitDistance = 5f;
     [SerializeField] private InventoryView _inventoryView;
     [SerializeField] private GameObject blockHighlightPrefab;
-    
+
     // Start is called before the first frame update
     void Start()
     {
@@ -26,15 +26,19 @@ public class PlayerInteraction : MonoBehaviour
         _mainCamera = Camera.main;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
-        
     }
 
     // Update is called once per frame
     void Update()
     {
         _cameraCenter = new Vector2(_mainCamera.pixelWidth / 2, _mainCamera.pixelHeight / 2);
-        //Consider giving cooldown to each block change
-        ProcessMouseInput();
+        delayTimer += Time.deltaTime;
+        if (delayTimer >= mouseInputDelay)
+        {
+            ProcessMouseInput();
+            delayTimer = 0;
+        }
+
         ProcessBlockHighlight();
     }
 
@@ -96,7 +100,7 @@ public class PlayerInteraction : MonoBehaviour
                     //Local within chunk (0-15) block coordinate
                     blockCoord = WorldCoordToChunkBlockCoord(adjustedHitCoord);
                     //Possibly keep the record of modified blocks in TerrainGen
-                    collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1] = BlockTypes.AIR;
+                    collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType = BlockTypes.AIR;
                 }
                 else
                 {
@@ -110,6 +114,9 @@ public class PlayerInteraction : MonoBehaviour
                     {
                         return;
                     }
+
+
+                    Sides placedDirection = ConvertVectorToSide(hit.normal);
                     
                     //Make sure the coordinate to get the block is the correct block, thus the +0.5f
                     adjustedHitCoord = hit.point + hit.normal * 0.5f;
@@ -131,7 +138,9 @@ public class PlayerInteraction : MonoBehaviour
                     }
 
                     //Possibly keep the record of modified blocks in TerrainGen
-                    collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1] = placedBlockType;
+                    collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType = placedBlockType;
+                    collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].UpDirection =
+                        placedDirection;
                 }
                 blockChange = true;
             }
@@ -144,8 +153,8 @@ public class PlayerInteraction : MonoBehaviour
                 blockCoord.y / RenderChunk.ySize, blockCoord.z / RenderChunk.zSize));
 
             if (RegionChunk
-                .blockTypesProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]]
-                .isTransparent)
+                .blockTypesProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]
+                    .BlockType].isTransparent)
             {
                 //Rerender the neighbouring render chunks
                 switch (blockCoord.y % RenderChunk.ySize)
@@ -239,5 +248,23 @@ public class PlayerInteraction : MonoBehaviour
         }
         
         return res;
+    }
+
+    Sides ConvertVectorToSide(Vector3 vec)
+    {
+        if(vec.normalized == Vector3.up)
+            return Sides.UP;
+        if (vec.normalized == Vector3.right)
+            return Sides.RIGHT;
+        if (vec.normalized == Vector3.back)
+            return Sides.FRONT;
+        if (vec.normalized == Vector3.left)
+            return Sides.LEFT;
+        if (vec.normalized == Vector3.forward)
+            return Sides.BACK;
+        if (vec.normalized == Vector3.down)
+            return Sides.DOWN;
+
+        return Sides.UP;
     }
 }

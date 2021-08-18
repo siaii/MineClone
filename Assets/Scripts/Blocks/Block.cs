@@ -1,12 +1,12 @@
-using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
 public abstract class Block
 {
     public virtual bool isTransparent => false;
+    public virtual bool isDirectional => false;
 
-    private readonly Dictionary<Sides, Vector3[]> _verticesBase = new Dictionary<Sides, Vector3[]>()
+    protected readonly Dictionary<Sides, Vector3[]> _verticesBase = new Dictionary<Sides, Vector3[]>()
     {
         {
             Sides.UP, new []
@@ -15,7 +15,9 @@ public abstract class Block
                 new Vector3(-0.5f, 0.5f, -0.5f),
                 new Vector3(0.5f, 0.5f, -0.5f),
                 new Vector3(0.5f, 0.5f, 0.5f)
-            }}, 
+            }
+            
+        }, 
         {
             Sides.DOWN, new []
             {
@@ -63,7 +65,402 @@ public abstract class Block
         }
     };
     
-    private readonly Dictionary<Sides, Vector2[]> _uvMap = new Dictionary<Sides, Vector2[]>()
+    protected readonly Dictionary<Sides, Dictionary<Sides, Vector2[]>> directionConverted =    
+        new Dictionary<Sides, Dictionary<Sides, Vector2[]>>()
+        {
+            {
+                Sides.FRONT, new Dictionary<Sides, Vector2[]>()
+                {
+                    // {Sides.UP, Sides.BACK},
+                    // {Sides.DOWN, Sides.FRONT},
+                    // {Sides.FRONT, Sides.UP},
+                    // {Sides.BACK, Sides.DOWN},
+                    // {Sides.LEFT, Sides.LEFT}, //Rotate
+                    // {Sides.RIGHT, Sides.RIGHT} //Rotate
+                    {
+                        Sides.UP, new []
+                        {
+                            new Vector2(0.995f, 3/8f),
+                            new Vector2(0.995f, 5/8f),
+                            new Vector2(0.75f, 5/8f),
+                            new Vector2(0.75f,3/8f),
+                        }}, 
+                    {
+                        Sides.DOWN, new []
+                        {
+                            
+                            new Vector2(0.25f, 5/8f),
+                            new Vector2(0.25f,3/8f),
+                            new Vector2(0.5f, 3/8f),
+                            new Vector2(0.5f, 5/8f),
+                        }},
+
+                    {
+                        Sides.FRONT, new[]
+                        {
+                            
+                            new Vector2(0.25f, 7/8f),
+                            new Vector2(0.25f,5/8f),
+                            new Vector2(0.5f, 5/8f),
+                            new Vector2(0.5f, 7/8f),
+                        }
+                    },
+                    {
+                        Sides.BACK, new []
+                        {
+                            new Vector2(0.5f, 1/8f),
+                            new Vector2(0.5f, 3/8f),
+                            new Vector2(0.25f, 3/8f),
+                            new Vector2(0.25f,1/8f),
+                        }
+                    },
+                    {
+                        Sides.LEFT, new []
+                        {
+                            new Vector2(0f,3/8f),
+                            new Vector2(0.25f, 3/8f),
+                            new Vector2(0.25f, 5/8f),
+                            new Vector2(0f, 5/8f),
+                        }
+                    },
+                    {
+                        Sides.RIGHT, new []
+                        {
+                            new Vector2(0.75f, 5/8f),
+                            new Vector2(0.5f, 5/8f),
+                            new Vector2(0.5f,3/8f),
+                            new Vector2(0.75f, 3/8f),
+                        }
+                    }
+                }
+            },
+            {
+                Sides.BACK, new Dictionary<Sides, Vector2[]>()
+                {
+                    // {Sides.UP, Sides.BACK},
+                    // {Sides.DOWN, Sides.FRONT},
+                    // {Sides.FRONT, Sides.UP},
+                    // {Sides.BACK, Sides.DOWN},
+                    // {Sides.LEFT, Sides.LEFT}, //Rotate
+                    // {Sides.RIGHT, Sides.RIGHT} //Rotate
+                    {
+                        Sides.UP, new []
+                        {
+                            new Vector2(0.995f, 3/8f),
+                            new Vector2(0.995f, 5/8f),
+                            new Vector2(0.75f, 5/8f),
+                            new Vector2(0.75f,3/8f),
+                        }}, 
+                    {
+                        Sides.DOWN, new []
+                        {
+                            
+                            new Vector2(0.25f, 5/8f),
+                            new Vector2(0.25f,3/8f),
+                            new Vector2(0.5f, 3/8f),
+                            new Vector2(0.5f, 5/8f),
+                        }},
+
+                    {
+                        Sides.FRONT, new[]
+                        {
+                            
+                            new Vector2(0.25f, 7/8f),
+                            new Vector2(0.25f,5/8f),
+                            new Vector2(0.5f, 5/8f),
+                            new Vector2(0.5f, 7/8f),
+                        }
+                    },
+                    {
+                        Sides.BACK, new []
+                        {
+                            new Vector2(0.5f, 1/8f),
+                            new Vector2(0.5f, 3/8f),
+                            new Vector2(0.25f, 3/8f),
+                            new Vector2(0.25f,1/8f),
+                        }
+                    },
+                    {
+                        Sides.LEFT, new []
+                        {
+                            new Vector2(0f,3/8f),
+                            new Vector2(0.25f, 3/8f),
+                            new Vector2(0.25f, 5/8f),
+                            new Vector2(0f, 5/8f),
+                        }
+                    },
+                    {
+                        Sides.RIGHT, new []
+                        {
+                            new Vector2(0.75f, 5/8f),
+                            new Vector2(0.5f, 5/8f),
+                            new Vector2(0.5f,3/8f),
+                            new Vector2(0.75f, 3/8f),
+                        }
+                    }
+                }
+            },
+            {
+                Sides.UP, new Dictionary<Sides, Vector2[]>()
+                {
+                    // {Sides.UP, Sides.UP},
+                    // {Sides.DOWN, Sides.DOWN},
+                    // {Sides.FRONT, Sides.FRONT},
+                    // {Sides.BACK, Sides.BACK},
+                    // {Sides.LEFT, Sides.LEFT},
+                    // {Sides.RIGHT, Sides.RIGHT}
+                    {
+                        Sides.UP, new []
+                        {
+                            new Vector2(0.25f, 7/8f),
+                            new Vector2(0.25f,5/8f),
+                            new Vector2(0.5f, 5/8f),
+                            new Vector2(0.5f, 7/8f),
+                        }}, 
+                    {
+                        Sides.DOWN, new []
+                        {
+                            new Vector2(0.25f, 3/8f),
+                            new Vector2(0.25f,1/8f),
+                            new Vector2(0.5f, 1/8f),
+                            new Vector2(0.5f, 3/8f),
+                        }},
+
+                    {
+                        Sides.FRONT, new[]
+                        {
+                            new Vector2(0.25f, 5/8f),
+                            new Vector2(0.25f,3/8f),
+                            new Vector2(0.5f, 3/8f),
+                            new Vector2(0.5f, 5/8f),
+                        }
+                    },
+                    {
+                        Sides.BACK, new []
+                        {
+                            new Vector2(0.75f, 5/8f),
+                            new Vector2(0.75f,3/8f),
+                            new Vector2(0.995f, 3/8f),
+                            new Vector2(0.995f, 5/8f),
+                        }
+                    },
+                    {
+                        Sides.LEFT, new []
+                        {
+                            new Vector2(0f, 5/8f),
+                            new Vector2(0f,3/8f),
+                            new Vector2(0.25f, 3/8f),
+                            new Vector2(0.25f, 5/8f),
+                        }
+                    },
+                    {
+                        Sides.RIGHT, new []
+                        {
+                            new Vector2(0.5f, 5/8f),
+                            new Vector2(0.5f,3/8f),
+                            new Vector2(0.75f, 3/8f),
+                            new Vector2(0.75f, 5/8f),
+                        }
+                    }
+                }
+            },
+            {
+                Sides.DOWN, new Dictionary<Sides, Vector2[]>()
+                {
+                    // {Sides.UP, Sides.UP},
+                    // {Sides.DOWN, Sides.DOWN},
+                    // {Sides.FRONT, Sides.FRONT},
+                    // {Sides.BACK, Sides.BACK},
+                    // {Sides.LEFT, Sides.LEFT},
+                    // {Sides.RIGHT, Sides.RIGHT}
+                    {
+                        Sides.UP, new []
+                        {
+                            new Vector2(0.25f, 7/8f),
+                            new Vector2(0.25f,5/8f),
+                            new Vector2(0.5f, 5/8f),
+                            new Vector2(0.5f, 7/8f),
+                        }}, 
+                    {
+                        Sides.DOWN, new []
+                        {
+                            new Vector2(0.25f, 3/8f),
+                            new Vector2(0.25f,1/8f),
+                            new Vector2(0.5f, 1/8f),
+                            new Vector2(0.5f, 3/8f),
+                        }},
+
+                    {
+                        Sides.FRONT, new[]
+                        {
+                            new Vector2(0.25f, 5/8f),
+                            new Vector2(0.25f,3/8f),
+                            new Vector2(0.5f, 3/8f),
+                            new Vector2(0.5f, 5/8f),
+                        }
+                    },
+                    {
+                        Sides.BACK, new []
+                        {
+                            new Vector2(0.75f, 5/8f),
+                            new Vector2(0.75f,3/8f),
+                            new Vector2(0.995f, 3/8f),
+                            new Vector2(0.995f, 5/8f),
+                        }
+                    },
+                    {
+                        Sides.LEFT, new []
+                        {
+                            new Vector2(0f, 5/8f),
+                            new Vector2(0f,3/8f),
+                            new Vector2(0.25f, 3/8f),
+                            new Vector2(0.25f, 5/8f),
+                        }
+                    },
+                    {
+                        Sides.RIGHT, new []
+                        {
+                            new Vector2(0.5f, 5/8f),
+                            new Vector2(0.5f,3/8f),
+                            new Vector2(0.75f, 3/8f),
+                            new Vector2(0.75f, 5/8f),
+                        }
+                    }
+                }
+            },
+            {
+                Sides.LEFT, new Dictionary<Sides, Vector2[]>()
+                {
+                    // {Sides.UP, Sides.LEFT},
+                    // {Sides.DOWN, Sides.RIGHT},
+                    // {Sides.FRONT, Sides.FRONT}, //Rotate
+                    // {Sides.BACK, Sides.BACK}, //Rotate
+                    // {Sides.LEFT, Sides.DOWN},
+                    // {Sides.RIGHT, Sides.UP}
+                    {
+                        Sides.UP, new []
+                        {
+                            new Vector2(0f,3/8f),
+                            new Vector2(0.25f, 3/8f),
+                            new Vector2(0.25f, 5/8f),
+                            new Vector2(0f, 5/8f),
+                        }}, 
+                    {
+                        Sides.DOWN, new []
+                        {
+                            new Vector2(0.5f,3/8f),
+                            new Vector2(0.75f, 3/8f),
+                            new Vector2(0.75f, 5/8f),
+                            new Vector2(0.5f, 5/8f),
+                        }},
+
+                    {
+                        Sides.FRONT, new[]
+                        {
+                            
+                            new Vector2(0.25f,3/8f),
+                            new Vector2(0.5f, 3/8f),
+                            new Vector2(0.5f, 5/8f),
+                            new Vector2(0.25f, 5/8f),
+                        }
+                    },
+                    {
+                        Sides.BACK, new []
+                        {
+                            new Vector2(0.995f, 5/8f),
+                            new Vector2(0.75f, 5/8f),
+                            new Vector2(0.75f,3/8f),
+                            new Vector2(0.995f, 3/8f),
+                        }
+                    },
+                    {
+                        Sides.LEFT, new []
+                        {
+                            new Vector2(0.5f, 3/8f),
+                            new Vector2(0.25f, 3/8f),
+                            new Vector2(0.25f,1/8f),
+                            new Vector2(0.5f, 1/8f),
+                        }
+                    },
+                    {
+                        Sides.RIGHT, new []
+                        {
+                            new Vector2(0.25f,5/8f),
+                            new Vector2(0.5f, 5/8f),
+                            new Vector2(0.5f, 7/8f),
+                            new Vector2(0.25f, 7/8f),
+                        }
+                    }
+                }
+            },
+            {
+                Sides.RIGHT, new Dictionary<Sides, Vector2[]>()
+                {
+                    // {Sides.UP, Sides.LEFT},
+                    // {Sides.DOWN, Sides.RIGHT},
+                    // {Sides.FRONT, Sides.FRONT}, //Rotate
+                    // {Sides.BACK, Sides.BACK}, //Rotate
+                    // {Sides.LEFT, Sides.DOWN},
+                    // {Sides.RIGHT, Sides.UP}
+                    {
+                        Sides.UP, new []
+                        {
+                            new Vector2(0f,3/8f),
+                            new Vector2(0.25f, 3/8f),
+                            new Vector2(0.25f, 5/8f),
+                            new Vector2(0f, 5/8f),
+                        }}, 
+                    {
+                        Sides.DOWN, new []
+                        {
+                            new Vector2(0.5f,3/8f),
+                            new Vector2(0.75f, 3/8f),
+                            new Vector2(0.75f, 5/8f),
+                            new Vector2(0.5f, 5/8f),
+                        }},
+
+                    {
+                        Sides.FRONT, new[]
+                        {
+                            
+                            new Vector2(0.25f,3/8f),
+                            new Vector2(0.5f, 3/8f),
+                            new Vector2(0.5f, 5/8f),
+                            new Vector2(0.25f, 5/8f),
+                        }
+                    },
+                    {
+                        Sides.BACK, new []
+                        {
+                            new Vector2(0.995f, 5/8f),
+                            new Vector2(0.75f, 5/8f),
+                            new Vector2(0.75f,3/8f),
+                            new Vector2(0.995f, 3/8f),
+                        }
+                    },
+                    {
+                        Sides.LEFT, new []
+                        {
+                            new Vector2(0.5f, 3/8f),
+                            new Vector2(0.25f, 3/8f),
+                            new Vector2(0.25f,1/8f),
+                            new Vector2(0.5f, 1/8f),
+                        }
+                    },
+                    {
+                        Sides.RIGHT, new []
+                        {
+                            new Vector2(0.25f,5/8f),
+                            new Vector2(0.5f, 5/8f),
+                            new Vector2(0.5f, 7/8f),
+                            new Vector2(0.25f, 7/8f),
+                        }
+                    }
+                }
+            }
+        };
+    
+    protected readonly Dictionary<Sides, Vector2[]> _uvMap = new Dictionary<Sides, Vector2[]>()
     {
         {
             Sides.UP, new []
@@ -126,7 +523,7 @@ public abstract class Block
     };
     
 
-    public virtual Vector3[] GetSideVertices(Sides reqSides, Vector3 blockPos)
+    public virtual Vector3[] GetSideVertices(Sides reqSides, Vector3 blockPos, Sides frontDirection = Sides.FRONT)
     {
         Vector3[] res = (Vector3[])_verticesBase[reqSides].Clone();
         for(int i=0; i<res.Length; i++)
@@ -141,8 +538,8 @@ public abstract class Block
         return _triangles;
     }
 
-    public virtual Vector2[] GetSideUVs(Sides reqSides)
-    {
-        return _uvMap[reqSides];
+    public virtual Vector2[] GetSideUVs(Sides reqSides, Sides upDirection = Sides.UP)
+    { 
+        return directionConverted[upDirection][reqSides];
     }
 }

@@ -6,6 +6,8 @@ public class Water_Source : Block
 {
     public override bool isTransparent => true;
 
+    public override bool isDirectional => true;
+    
     private readonly int[] _insideTriangle =
     {
         0, 2, 1, 0, 3, 2

@@ -1,7 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
-using Unity.Mathematics;
 using UnityEngine;
 
 [RequireComponent(typeof(CharacterController))]
@@ -23,7 +19,7 @@ public class PlayerController : MonoBehaviour
     [SerializeField] private InventoryView _inventoryView;
 
     private CharacterController _characterController;
-    private Vector3 _playerVelocity;
+    private Vector3 _playerVelocity = Vector3.zero;
     private Vector3 _downVelocity = new Vector3(0,0,0);
 
     private TerrainGen _terrainGen;
@@ -48,10 +44,6 @@ public class PlayerController : MonoBehaviour
     // Update is called once per frame
     void Update()
     {
-        //Don't process player movement and camera if inventory is active
-        if (_inventoryView.IsInventoryActive)
-            return;
-
         ProcessCamera();
         ProcessMovement();
     }
@@ -64,18 +56,6 @@ public class PlayerController : MonoBehaviour
 
     private void ProcessMovement()
     {
-        Vector3 _playerVelocity =
-            new Vector3(Input.GetAxis("Horizontal") * moveSpeed, 0, Input.GetAxis("Vertical") * moveSpeed);
-        Vector3.ClampMagnitude(_playerVelocity, moveSpeed);
-
-        //Transform local direction vector into world vector
-        _playerVelocity = transform.TransformDirection(_playerVelocity);
-
-        if (isInWater)
-        {
-            _playerVelocity *= waterSlowModifier;
-        }
-
         if (!_characterController.isGrounded)
         {
             var change = -gravityConst * Time.deltaTime;
@@ -83,23 +63,54 @@ public class PlayerController : MonoBehaviour
                 change *= waterSlowModifier * waterSlowModifier;
             _downVelocity.y += change;
         }
-        
-        if (isInWater || lastFrameInWater)
+
+        //Only process player inputs when inventory is closed
+        if (!_inventoryView.IsInventoryActive)
         {
-            if (Input.GetButton("Jump"))
+            _playerVelocity =
+                new Vector3(Input.GetAxis("Horizontal") * moveSpeed, 0, Input.GetAxis("Vertical") * moveSpeed);
+            Vector3.ClampMagnitude(_playerVelocity, moveSpeed);
+
+            //Transform local direction vector into world vector
+            _playerVelocity = transform.TransformDirection(_playerVelocity);
+
+            if (isInWater)
             {
-                _downVelocity.y = Mathf.Sqrt(Mathf.Abs(2 * jumpHeight * gravityConst)) * waterSlowModifier;
+                _playerVelocity *= waterSlowModifier;
+            }else if (!_characterController.isGrounded)
+            {
+                //TODO Use parabola equation to calculate movement in air
+            }
+
+            if (isInWater || lastFrameInWater)
+            {
+                if (Input.GetButton("Jump"))
+                {
+                    _downVelocity.y = Mathf.Sqrt(Mathf.Abs(2 * jumpHeight * gravityConst)) * waterSlowModifier;
+                }
+            }
+            else
+            {
+                if (Input.GetButtonDown("Jump") && _characterController.isGrounded)
+                {
+                    _downVelocity.y = Mathf.Sqrt(Mathf.Abs(2 * jumpHeight * gravityConst));
+                }
             }
         }
         else
         {
-            if (Input.GetButtonDown("Jump") && _characterController.isGrounded)
-            {
-                _downVelocity.y = Mathf.Sqrt(Mathf.Abs(2 * jumpHeight * gravityConst));
-            }
+            //Smoothen the player stop when player opens inventory, not abrupt stop
+            
+            float multiplierX = Mathf.Sign(_playerVelocity.x) * -1f;
+            float multiplierZ = Mathf.Sign(_playerVelocity.z) * -1f;
+            
+            _playerVelocity.x = _playerVelocity.x + multiplierX * 3 * moveSpeed * Time.deltaTime;
+            _playerVelocity.z = _playerVelocity.z + multiplierZ * 3 * moveSpeed * Time.deltaTime;
+            
+            _playerVelocity.x = _playerVelocity.x > 0 ? Mathf.Clamp(_playerVelocity.x, 0, moveSpeed) : Mathf.Clamp(_playerVelocity.x, -moveSpeed, 0);
+            _playerVelocity.z = _playerVelocity.z > 0 ? Mathf.Clamp(_playerVelocity.z, 0, moveSpeed) : Mathf.Clamp(_playerVelocity.z, -moveSpeed, 0);
         }
         
-
         //Clamp to terminal velocity
         _downVelocity.y = Mathf.Clamp(_downVelocity.y, playerTerminalVelocity, Mathf.Infinity);
 
@@ -109,6 +120,10 @@ public class PlayerController : MonoBehaviour
 
     private void ProcessCamera()
     {
+        //Only process player inputs when inventory is closed
+        if (_inventoryView.IsInventoryActive)
+            return;
+        
         //Vertical rotation
         rotationY -= Input.GetAxis("Mouse Y") * verticalSens * Time.deltaTime;
         rotationY = Mathf.Clamp(rotationY, -90, 90);

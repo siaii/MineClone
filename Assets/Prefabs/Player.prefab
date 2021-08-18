@@ -1184,6 +1184,7 @@ MonoBehaviour:
   playerTerminalVelocity: -20
   gravityConst: 9.8
   jumpHeight: 1.125
+  waterSlowModifier: 0.7
   _inventoryView: {fileID: 4041948128877387073}
 --- !u!114 &2476801170485310566
 MonoBehaviour:
@@ -1197,6 +1198,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b8f793af40516a49a00cc0e92d8f71f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  mouseInputDelay: 0.15
   maxHitDistance: 4
   _inventoryView: {fileID: 4041948128877387073}
   blockHighlightPrefab: {fileID: 9174112927557162602, guid: a66c3b6eb7301b94fb25ceafaa626e4d, type: 3}
@@ -1346,7 +1348,6 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   PostProcessingCollider: {fileID: 8246997299305608176}
   _playerController: {fileID: 5287522421205559384}
-  isTinted: 0
 --- !u!1 &7688604950794161029
 GameObject:
   m_ObjectHideFlags: 0

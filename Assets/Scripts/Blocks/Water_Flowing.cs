@@ -6,6 +6,8 @@ public class Water_Flowing : Block
 {
     public override bool isTransparent => true;
 
+    public override bool isDirectional => true;
+
     private readonly Dictionary<Sides, Vector3[]> _verticesHeight4 = new Dictionary<Sides, Vector3[]>()
     {
         {
