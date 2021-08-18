@@ -36,7 +36,7 @@ public class PlayerInteraction : MonoBehaviour
         if (delayTimer >= mouseInputDelay)
         {
             ProcessMouseInput();
-            delayTimer = 0;
+            //Reset delay timer only after block change
         }
 
         ProcessBlockHighlight();
@@ -227,6 +227,7 @@ public class PlayerInteraction : MonoBehaviour
                         break;
                 }
             }
+            delayTimer = 0;
         }
     }
 

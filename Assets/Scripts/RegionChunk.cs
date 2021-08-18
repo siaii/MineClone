@@ -222,7 +222,7 @@ public class RegionChunk : MonoBehaviour
 
     Vector2[] GetBlockSideUVs(BlockTypes type, Sides side, Sides upDirection = Sides.UP)
     {
-        var localUV = blockTypesProperties[type].GetSideUVs(side, upDirection);
+        var localUV = blockTypesProperties[type].GetSideUVs(side, blockTypesProperties[type].isDirectional ? upDirection : Sides.UP);
         Vector2[] res = new Vector2[localUV.Length];
         var textureRect = _texturePacker.blockTextureRects[_texturePacker.textureDictIndex[type]];
 

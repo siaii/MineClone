@@ -99,16 +99,15 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            //Smoothen the player stop when player opens inventory, not abrupt stop
+            if (!(Mathf.Abs(_playerVelocity.x) < Mathf.Epsilon && Mathf.Abs(_playerVelocity.z) < Mathf.Epsilon))
+            {
+                //Smoothen the player stop when player opens inventory, not abrupt stop
+                _playerVelocity.x = _playerVelocity.x - Mathf.Sign(_playerVelocity.x) * 3 * moveSpeed * Time.deltaTime;
+                _playerVelocity.z = _playerVelocity.z - Mathf.Sign(_playerVelocity.z) * 3 * moveSpeed * Time.deltaTime;
             
-            float multiplierX = Mathf.Sign(_playerVelocity.x) * -1f;
-            float multiplierZ = Mathf.Sign(_playerVelocity.z) * -1f;
-            
-            _playerVelocity.x = _playerVelocity.x + multiplierX * 3 * moveSpeed * Time.deltaTime;
-            _playerVelocity.z = _playerVelocity.z + multiplierZ * 3 * moveSpeed * Time.deltaTime;
-            
-            _playerVelocity.x = _playerVelocity.x > 0 ? Mathf.Clamp(_playerVelocity.x, 0, moveSpeed) : Mathf.Clamp(_playerVelocity.x, -moveSpeed, 0);
-            _playerVelocity.z = _playerVelocity.z > 0 ? Mathf.Clamp(_playerVelocity.z, 0, moveSpeed) : Mathf.Clamp(_playerVelocity.z, -moveSpeed, 0);
+                _playerVelocity.x = _playerVelocity.x > 0 ? Mathf.Clamp(_playerVelocity.x, 0f, moveSpeed) : Mathf.Clamp(_playerVelocity.x, -moveSpeed, 0f);
+                _playerVelocity.z = _playerVelocity.z > 0 ? Mathf.Clamp(_playerVelocity.z, 0f, moveSpeed) : Mathf.Clamp(_playerVelocity.z, -moveSpeed, 0f);
+            }
         }
         
         //Clamp to terminal velocity
