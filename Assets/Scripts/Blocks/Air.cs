@@ -64,7 +64,7 @@ public class Air : Block
         }
     };
     
-    public override Vector3[] GetSideVertices(Sides reqSides, Vector3 blockPos, Sides frontDirection = Sides.FRONT)
+    public override Vector3[] GetSideVertices(Sides reqSides, Vector3 blockPos)
     {
         Vector3[] res = (Vector3[])_verticesBase[reqSides].Clone();
         for(int i=0; i<res.Length; i++)
@@ -79,7 +79,7 @@ public class Air : Block
         return _triangles;
     }
     
-    public override Vector2[] GetSideUVs(Sides reqSides, Sides upDirection = Sides.FRONT)
+    public override Vector2[] GetSideUVs(Sides reqSides, Sides blockDirection = Sides.FRONT)
     {
         return _uvMap[reqSides];
     }

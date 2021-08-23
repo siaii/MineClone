@@ -5,7 +5,7 @@ using UnityEngine;
 public class BlockData
 {
     private BlockTypes _blockTypes = BlockTypes.AIR;
-    private Sides _upDirection = Sides.UP;
+    private Sides _blockDirection = Sides.UP;
     private int _level = 1;
     public BlockTypes BlockType
     {
@@ -13,10 +13,10 @@ public class BlockData
         set => _blockTypes = value;
     }
 
-    public Sides UpDirection
+    public Sides BlockDirection
     {
-        get => _upDirection;
-        set => _upDirection = value;
+        get => _blockDirection;
+        set => _blockDirection = value;
     }
 
     public int Level

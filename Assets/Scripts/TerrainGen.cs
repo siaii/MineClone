@@ -180,6 +180,7 @@ public class TerrainGen : MonoBehaviour
         }
         chunk.gameObject.SetActive(true);
         chunk.name = chunkCoord.x + "," + chunkCoord.y;
+        chunk.SetChunkPos(chunkCoord.x, chunkCoord.y);
         chunk.transform.position = new Vector3(chunkCoord.x * RegionChunk.chunkSizeX, 0,
             chunkCoord.y * RegionChunk.chunkSizeZ);
         activeRegionChunks.Add(chunkCoord, chunk);
@@ -226,7 +227,8 @@ public class TerrainGen : MonoBehaviour
 
                 for (; y < waterLevel; y++)
                 {
-                    chunk.BlocksData[x][y][z].BlockType = BlockTypes.WATER_SOURCE;
+                    chunk.BlocksData[x][y][z].BlockType = BlockTypes.WATER_FLOWING;
+                    chunk.BlocksData[x][y][z].BlockDirection = Sides.DOWN;
                 }
 
                 for (; y < RegionChunk.chunkSizeY; y++)
@@ -420,5 +422,63 @@ public class TerrainGen : MonoBehaviour
         }
         print("Chunk not found");
         return null;
+    }
+
+    public void UpdateBorderingChunkData(RegionChunk regChunk, Vector3Int blockCoord, BlockData blockData)
+    {
+        var blockCoordCopy = blockCoord;
+                Vector2Int chunkID;
+                RegionChunk borderingRegChunk;
+                switch (blockCoord.x)
+                {
+                    case (0):
+                        //Get the neighbouring chunk to update
+                        chunkID = regChunk.chunkPos;
+                        chunkID.x -= 1;
+                        borderingRegChunk = GetRegionChunk(chunkID);
+                        blockCoordCopy.x = RegionChunk.chunkSizeX - 1;
+                        //Modify the block data copy in the neighbour chunk
+                        borderingRegChunk.BlocksData[blockCoordCopy.x + 1 + 1][blockCoordCopy.y][blockCoordCopy.z + 1] =
+                            blockData;
+                        //Recalculate the corresponding render chunk
+                        StartCoroutine(borderingRegChunk.CalculateDrawnMesh(blockCoordCopy.x / RenderChunk.xSize,
+                            blockCoordCopy.y / RenderChunk.ySize, blockCoordCopy.z / RenderChunk.zSize));
+                        break;
+                    case (RegionChunk.chunkSizeX - 1):
+                        chunkID = regChunk.chunkPos;
+                        chunkID.x += 1;
+                        borderingRegChunk = GetRegionChunk(chunkID);
+                        blockCoordCopy.x = 0;
+                        borderingRegChunk.BlocksData[blockCoordCopy.x + 1 - 1][blockCoordCopy.y][blockCoordCopy.z + 1] =
+                            blockData;
+                        StartCoroutine(borderingRegChunk.CalculateDrawnMesh(blockCoordCopy.x / RenderChunk.xSize,
+                            blockCoordCopy.y / RenderChunk.ySize, blockCoordCopy.z / RenderChunk.zSize));
+                        break;
+                }
+
+                blockCoordCopy = blockCoord;
+                switch (blockCoord.z)
+                {
+                    case (0):
+                        chunkID = regChunk.chunkPos;
+                        chunkID.y -= 1;
+                        borderingRegChunk = GetRegionChunk(chunkID);
+                        blockCoordCopy.z = RegionChunk.chunkSizeZ - 1;
+                        borderingRegChunk.BlocksData[blockCoordCopy.x + 1][blockCoordCopy.y][blockCoordCopy.z + 1 + 1] =
+                            blockData;
+                        StartCoroutine(borderingRegChunk.CalculateDrawnMesh(blockCoordCopy.x / RenderChunk.xSize,
+                            blockCoordCopy.y / RenderChunk.ySize, blockCoordCopy.z / RenderChunk.zSize));
+                        break;
+                    case (RegionChunk.chunkSizeZ - 1):
+                        chunkID = regChunk.chunkPos;
+                        chunkID.y += 1;
+                        borderingRegChunk = GetRegionChunk(chunkID);
+                        blockCoordCopy.z = 0;
+                        borderingRegChunk.BlocksData[blockCoordCopy.x + 1][blockCoordCopy.y][blockCoordCopy.z + 1 - 1] =
+                            blockData;
+                        StartCoroutine(borderingRegChunk.CalculateDrawnMesh(blockCoordCopy.x / RenderChunk.xSize,
+                            blockCoordCopy.y / RenderChunk.ySize, blockCoordCopy.z / RenderChunk.zSize));
+                        break;
+                }
     }
 }

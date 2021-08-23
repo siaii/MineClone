@@ -19,7 +19,7 @@ public class RegionChunk : MonoBehaviour
     private RenderChunk[][][] _renderChunks;
     private WaterChunk[][][] _waterChunks;
 
-    private Vector2Int chunkPos;
+    public Vector2Int chunkPos;
 
     private float noiseScale = 1f;
     private float heightScale = 0.6f;
@@ -175,16 +175,27 @@ public class RegionChunk : MonoBehaviour
                         if (checkBlock.y < 0 || checkBlock.y >= chunkSizeY ||
                             (CheckBlockIsTransparent(checkBlock) && CheckIsNotSameBlock(BlocksData[x][y][z].BlockType, checkBlock)))
                         {
+                            BlockData data = BlocksData[x][y][z];
                             int localX = x - startX;
                             int localY = y - startY;
                             int localZ = z - startZ;
                             int oldLength;
-                            if (BlocksData[x][y][z].BlockType == BlockTypes.WATER_SOURCE)
+                            if (blockTypesProperties[data.BlockType].isFluid)
                             {
                                 oldLength = waterVertices.Count;
-                                waterVertices.AddRange(blockTypesProperties[BlocksData[x][y][z].BlockType].GetSideVertices(pair.Key, new Vector3(localX,localY,localZ)));
-                                waterUvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z].BlockType, pair.Key));
-                                var blockTris = blockTypesProperties[BlocksData[x][y][z].BlockType].GetSideTriangles(pair.Key);
+                                if (blockTypesProperties[data.BlockType].isLeveled)
+                                {
+                                    waterVertices.AddRange(blockTypesProperties[data.BlockType]
+                                        .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
+                                            data.BlockDirection, data.Level));
+                                }
+                                else
+                                {
+                                    waterVertices.AddRange(blockTypesProperties[data.BlockType]
+                                        .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ)));
+                                }
+                                waterUvs.AddRange(GetBlockSideUVs(data.BlockType, pair.Key));
+                                var blockTris = blockTypesProperties[data.BlockType].GetSideTriangles(pair.Key);
                                 
                                 foreach (var offset in blockTris)
                                 {
@@ -194,12 +205,11 @@ public class RegionChunk : MonoBehaviour
                             else
                             {
                                 oldLength = vertices.Count;
-                                vertices.AddRange(blockTypesProperties[BlocksData[x][y][z].BlockType]
+                                vertices.AddRange(blockTypesProperties[data.BlockType]
                                     .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ)));
 
-                                uvs.AddRange(GetBlockSideUVs(BlocksData[x][y][z].BlockType, pair.Key, BlocksData[x][y][z].UpDirection));
-                                var blockTris = blockTypesProperties[BlocksData[x][y][z].BlockType].GetSideTriangles(pair.Key);
-
+                                uvs.AddRange(GetBlockSideUVs(data.BlockType, pair.Key, data.BlockDirection));
+                                var blockTris = blockTypesProperties[data.BlockType].GetSideTriangles(pair.Key);
                                 foreach (var offset in blockTris)
                                 {
                                     tris.Add(oldLength + offset);

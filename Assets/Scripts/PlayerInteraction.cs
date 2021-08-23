@@ -139,7 +139,7 @@ public class PlayerInteraction : MonoBehaviour
 
                     //Possibly keep the record of modified blocks in TerrainGen
                     collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType = placedBlockType;
-                    collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].UpDirection =
+                    collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockDirection =
                         placedDirection;
                 }
                 blockChange = true;
@@ -171,61 +171,8 @@ public class PlayerInteraction : MonoBehaviour
                         break;
                 }
 
-                //Extra logic needed to access the render chunk of different region chunk
-                var blockCoordCopy = blockCoord;
-                Vector2Int chunkID;
-                RegionChunk regChunk;
-                switch (blockCoord.x)
-                {
-                    case (0):
-                        //Get the neighbouring chunk to update
-                        chunkID = TerrainGen.ChunkFromPosition(new Vector3(adjustedHitCoord.x - 1f, adjustedHitCoord.y,
-                            adjustedHitCoord.z));
-                        regChunk = _terrainGen.GetRegionChunk(chunkID);
-                        blockCoordCopy.x = RegionChunk.chunkSizeX - 1;
-                        //Modify the block data copy in the neighbour chunk
-                        regChunk.BlocksData[blockCoordCopy.x + 1 + 1][blockCoordCopy.y][blockCoordCopy.z + 1] =
-                            collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1];
-                        //Recalculate the corresponding render chunk
-                        StartCoroutine(regChunk.CalculateDrawnMesh(blockCoordCopy.x / RenderChunk.xSize,
-                            blockCoordCopy.y / RenderChunk.ySize, blockCoordCopy.z / RenderChunk.zSize));
-                        break;
-                    case (RegionChunk.chunkSizeX - 1):
-                        chunkID = TerrainGen.ChunkFromPosition(new Vector3(adjustedHitCoord.x + 1f, adjustedHitCoord.y,
-                            adjustedHitCoord.z));
-                        regChunk = _terrainGen.GetRegionChunk(chunkID);
-                        blockCoordCopy.x = 0;
-                        regChunk.BlocksData[blockCoordCopy.x + 1 - 1][blockCoordCopy.y][blockCoordCopy.z + 1] =
-                            collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1];
-                        StartCoroutine(regChunk.CalculateDrawnMesh(blockCoordCopy.x / RenderChunk.xSize,
-                            blockCoordCopy.y / RenderChunk.ySize, blockCoordCopy.z / RenderChunk.zSize));
-                        break;
-                }
-
-                blockCoordCopy = blockCoord;
-                switch (blockCoord.z)
-                {
-                    case (0):
-                        chunkID = TerrainGen.ChunkFromPosition(new Vector3(adjustedHitCoord.x, adjustedHitCoord.y,
-                            adjustedHitCoord.z - 1f));
-                        regChunk = _terrainGen.GetRegionChunk(chunkID);
-                        blockCoordCopy.z = RegionChunk.chunkSizeZ - 1;
-                        regChunk.BlocksData[blockCoordCopy.x + 1][blockCoordCopy.y][blockCoordCopy.z + 1 + 1] =
-                            collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1];
-                        StartCoroutine(regChunk.CalculateDrawnMesh(blockCoordCopy.x / RenderChunk.xSize,
-                            blockCoordCopy.y / RenderChunk.ySize, blockCoordCopy.z / RenderChunk.zSize));
-                        break;
-                    case (RegionChunk.chunkSizeZ - 1):
-                        chunkID = TerrainGen.ChunkFromPosition(new Vector3(adjustedHitCoord.x, adjustedHitCoord.y,
-                            adjustedHitCoord.z + 1f));
-                        regChunk = _terrainGen.GetRegionChunk(chunkID);
-                        blockCoordCopy.z = 0;
-                        regChunk.BlocksData[blockCoordCopy.x + 1][blockCoordCopy.y][blockCoordCopy.z + 1 - 1] =
-                            collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1];
-                        StartCoroutine(regChunk.CalculateDrawnMesh(blockCoordCopy.x / RenderChunk.xSize,
-                            blockCoordCopy.y / RenderChunk.ySize, blockCoordCopy.z / RenderChunk.zSize));
-                        break;
-                }
+                //Update the render chunk of different region chunk
+                _terrainGen.UpdateBorderingChunkData(collidedChunk, blockCoord, collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]);
             }
             delayTimer = 0;
         }

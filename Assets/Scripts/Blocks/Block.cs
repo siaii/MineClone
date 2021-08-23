@@ -5,6 +5,9 @@ public abstract class Block
 {
     public virtual bool isTransparent => false;
     public virtual bool isDirectional => false;
+    public virtual bool isLeveled => false;
+
+    public virtual bool isFluid => false;
 
     protected readonly Dictionary<Sides, Vector3[]> _verticesBase = new Dictionary<Sides, Vector3[]>()
     {
@@ -523,7 +526,27 @@ public abstract class Block
     };
     
 
-    public virtual Vector3[] GetSideVertices(Sides reqSides, Vector3 blockPos, Sides frontDirection = Sides.FRONT)
+    public virtual Vector3[] GetSideVertices(Sides reqSides, Vector3 blockPos)
+    {
+        Vector3[] res = (Vector3[])_verticesBase[reqSides].Clone();
+        for(int i=0; i<res.Length; i++)
+        {
+            res[i] += blockPos;
+        }
+        return res;
+    }
+    
+    public virtual Vector3[] GetSideVertices(Sides reqSides, Vector3 blockPos, Sides blockDirection)
+    {
+        Vector3[] res = (Vector3[])_verticesBase[reqSides].Clone();
+        for(int i=0; i<res.Length; i++)
+        {
+            res[i] += blockPos;
+        }
+        return res;
+    }
+    
+    public virtual Vector3[] GetSideVertices(Sides reqSides, Vector3 blockPos, Sides blockDirection, int level)
     {
         Vector3[] res = (Vector3[])_verticesBase[reqSides].Clone();
         for(int i=0; i<res.Length; i++)
@@ -538,8 +561,8 @@ public abstract class Block
         return _triangles;
     }
 
-    public virtual Vector2[] GetSideUVs(Sides reqSides, Sides upDirection = Sides.UP)
+    public virtual Vector2[] GetSideUVs(Sides reqSides, Sides blockDirection = Sides.UP)
     { 
-        return directionConverted[upDirection][reqSides];
+        return directionConverted[blockDirection][reqSides];
     }
 }
