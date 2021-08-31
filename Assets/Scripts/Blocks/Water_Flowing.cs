@@ -2,13 +2,11 @@ using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 
-public class Water_Flowing : Block
+public class Water_Flowing : Water_Source
 {
     public override bool isTransparent => true;
     public override bool isDirectional => true;
     public override bool isLeveled => true;
-
-    public override bool isFluid => true;
 
     protected readonly Dictionary<Sides, Vector3[]> _verticesHeight4 = new Dictionary<Sides, Vector3[]>()
     {
@@ -100,10 +98,10 @@ public class Water_Flowing : Block
         {
             Sides.BACK, new []
             {
-                new Vector3(0.5f, 0.25f, 0.5f),
+                new Vector3(0.5f, 0.0f, 0.5f),
                 new Vector3(0.5f, -0.5f, 0.5f),
                 new Vector3(-0.5f, -0.5f, 0.5f),
-                new Vector3(-0.5f, 0.25f, 0.5f)
+                new Vector3(-0.5f, 0.0f, 0.5f)
             }
         },
         {
@@ -305,5 +303,22 @@ public class Water_Flowing : Block
         }
         return res;
         
+    }
+    
+    //Dont flow to other flowing water with higher level
+    protected override void ExistingFlowWater(RegionChunk regChunk, Vector3Int checkBlock, KeyValuePair<Sides, Vector3Int> pair, BlockData curBlockData)
+    {
+        if (curBlockData.Level < regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level ||
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockType == BlockTypes.WATER_SOURCE)
+        {
+            return;
+        }
+
+        if (curBlockData.Level - 1 >= regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level)
+        {
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = curBlockData.Level - 1;
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key;
+        }
+
     }
 }

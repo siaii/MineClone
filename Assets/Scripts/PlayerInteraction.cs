@@ -1,3 +1,4 @@
+using System.Collections.Generic;
 using UnityEngine;
 
 public class PlayerInteraction : MonoBehaviour
@@ -12,6 +13,16 @@ public class PlayerInteraction : MonoBehaviour
     private GameObject blockHighlight;
 
     private float delayTimer;
+    
+    private readonly Dictionary<Sides, Vector3Int> sideVector = new Dictionary<Sides, Vector3Int>()
+    {
+        {Sides.UP, Vector3Int.up},
+        {Sides.DOWN, Vector3Int.down},
+        {Sides.FRONT, Vector3Int.back},
+        {Sides.BACK, Vector3Int.forward},
+        {Sides.LEFT, Vector3Int.left},
+        {Sides.RIGHT, Vector3Int.right}
+    };
 
     [SerializeField] private float mouseInputDelay = 0.05f; //Delay between mouse input being processed
     [SerializeField] private float maxHitDistance = 5f;
@@ -148,7 +159,7 @@ public class PlayerInteraction : MonoBehaviour
 
         if (blockChange)
         {
-            //Calculate
+            //Calculate new mesh
             StartCoroutine(collidedChunk.CalculateDrawnMesh(blockCoord.x / RenderChunk.xSize,
                 blockCoord.y / RenderChunk.ySize, blockCoord.z / RenderChunk.zSize));
 
@@ -173,6 +184,46 @@ public class PlayerInteraction : MonoBehaviour
 
                 //Update the render chunk of different region chunk
                 _terrainGen.UpdateBorderingChunkData(collidedChunk, blockCoord, collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]);
+            }
+
+            //Queue block update at all bordering blocks
+            var originalChunk = collidedChunk;
+            foreach (var pair in sideVector)
+            {
+                collidedChunk = originalChunk;
+                var newBlock = blockCoord + pair.Value;
+                //If the block to add is not in the current chunk
+                if (newBlock.x < 0 || newBlock.x + 1 > RegionChunk.chunkSizeX || newBlock.z < 0 ||
+                    newBlock.z + 1 > RegionChunk.chunkSizeZ)
+                {
+                    TerrainGen _terrainGen = TerrainGen.instance;
+                    var newChunkID = collidedChunk.chunkPos;
+                    newChunkID.x += pair.Value.x;
+                    newChunkID.y += pair.Value.z;
+
+                    collidedChunk = _terrainGen.GetRegionChunk(newChunkID);
+                    switch (pair.Key)
+                    {
+                        case Sides.RIGHT:
+                            newBlock.x = 0;
+                            break;
+                        case Sides.FRONT:
+                            newBlock.z = 15;
+                            break;
+                        case Sides.LEFT:
+                            newBlock.x = 15;
+                            break;
+                        case Sides.BACK:
+                            newBlock.z = 0;
+                            break;
+                        default:
+                            newBlock.x = 0;
+                            newBlock.z = 0;
+                            Debug.LogError("Water update chunk border error");
+                            break;
+                    }
+                }
+                collidedChunk._chunkUpdater.updateNextTick.Enqueue(newBlock);
             }
             delayTimer = 0;
         }

@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 8017198263036184831}
   - component: {fileID: 8017198263036184830}
+  - component: {fileID: -8001016658039007387}
   m_Layer: 0
   m_Name: Region Chunk
   m_TagString: Untagged
@@ -45,3 +46,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   renderChunkPrefab: {fileID: 8326332346417255924, guid: 31e1a0c2665023345a7940639e3575db, type: 3}
   waterChunkPrefab: {fileID: 8878416747378243934, guid: fc923500142cf4c43800660ba4b5a4d4, type: 3}
+  _chunkUpdater: {fileID: -8001016658039007387}
+  chunkPos: {x: 0, y: 0}
+--- !u!114 &-8001016658039007387
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 8017198263036184829}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 50ed6a08133507d4c8c3e8a42e74de20, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  _regionChunk: {fileID: 8017198263036184830}
+  tickSpeed: 1

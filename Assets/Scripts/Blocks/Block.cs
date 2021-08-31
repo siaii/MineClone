@@ -565,4 +565,9 @@ public abstract class Block
     { 
         return directionConverted[blockDirection][reqSides];
     }
+
+    public virtual bool BlockUpdate(RegionChunk regChunk, Vector3Int blockPos)
+    {
+        return false;
+    }
 }

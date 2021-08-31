@@ -32,6 +32,8 @@ public class TerrainGen : MonoBehaviour
     [SerializeField] private float chunksWithTreesRatio = 0.4f;
     
     public static int waterLevel = 44;
+
+    public static TerrainGen instance;
     
     private Texture2D noiseTexture;
 
@@ -50,10 +52,14 @@ public class TerrainGen : MonoBehaviour
     private int maxSimultaneousChunkLoading = 4;
 
     private GameObject playerGO;
-    
+
     // Start is called before the first frame update
     void Start()
     {
+        if (instance == null)
+        {
+            instance = this;
+        }
         ProcessChunkChanges(true);
         _prevPlayerChunk = ChunkFromPosition(playerTransform.position);
     }
@@ -227,8 +233,7 @@ public class TerrainGen : MonoBehaviour
 
                 for (; y < waterLevel; y++)
                 {
-                    chunk.BlocksData[x][y][z].BlockType = BlockTypes.WATER_FLOWING;
-                    chunk.BlocksData[x][y][z].BlockDirection = Sides.DOWN;
+                    chunk.BlocksData[x][y][z].BlockType = BlockTypes.WATER_SOURCE;
                 }
 
                 for (; y < RegionChunk.chunkSizeY; y++)
