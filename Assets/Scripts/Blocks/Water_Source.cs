@@ -78,7 +78,6 @@ public class Water_Source : Block
         KeyValuePair<Sides, Vector3Int> pair)
     {
         var curBlockData = regChunk.BlocksData[blockPos.x + 1][blockPos.y][blockPos.z + 1];
-        // Debug.Log(regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockType);
         if (regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockType == BlockTypes.AIR)
         {
             NewFlowWater(regChunk, checkBlock, pair, curBlockData);
@@ -101,6 +100,11 @@ public class Water_Source : Block
     {
         //If level 4 then make infinite water source
         regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key;
+        regChunk._chunkUpdater.updateNextTick.Enqueue(checkBlock);
+        regChunk._chunkUpdater.renderChunkToReDraw.Add(new Vector3Int(checkBlock.x / RenderChunk.xSize,
+            checkBlock.y / RenderChunk.ySize, checkBlock.z / RenderChunk.zSize));
+        TerrainGen.instance.UpdateBorderingChunkData(regChunk, checkBlock,
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1]);    
     }
 
     private void NewFlowWater(RegionChunk regChunk, Vector3Int checkBlock, KeyValuePair<Sides, Vector3Int> pair, BlockData curBlockData)
@@ -113,13 +117,11 @@ public class Water_Source : Block
             
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection = pair.Key;
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key;
-                // curBlockData.BlockType == BlockTypes.WATER_SOURCE ? pair.Key : curBlockData.BlockDirection;
-            
+
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = pair.Key == Sides.DOWN ? 4 : curLevel - 1;
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SourceDirection =
                 curBlockData.BlockType == BlockTypes.WATER_SOURCE ? pair.Key : curBlockData.BlockDirection;
             
-            // Debug.Log(regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection + ", " + regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SourceDirection);
             //Add newly created water to queue only if it creates new flowing water                
             regChunk._chunkUpdater.updateNextTick.Enqueue(checkBlock);
             regChunk._chunkUpdater.renderChunkToReDraw.Add(new Vector3Int(checkBlock.x / RenderChunk.xSize,

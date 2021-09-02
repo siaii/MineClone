@@ -182,6 +182,7 @@ public class RegionChunk : MonoBehaviour
                     //Check all 6 direction if the face needs to be drawn
                     foreach (var pair in sideVector)
                     {
+                        //Account face check vector for the direction of the block
                         float rotationAmount = 0;
                         switch (BlocksData[x][y][z].BlockDirection)
                         {
@@ -225,15 +226,17 @@ public class RegionChunk : MonoBehaviour
                             if (blockTypesProperties[data.BlockType].isFluid)
                             {
                                 oldLength = waterVertices.Count;
+                                //If isLeveled (flowing water only for now)
                                 if (blockTypesProperties[data.BlockType].isLeveled)
                                 {
+                                    //If the water flows from two different direction of water source
                                     if (data.BlockDirection != data.SubDirection)
                                     {
                                         var vertMainDir = blockTypesProperties[data.BlockType]
                                             .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
                                                 data.BlockDirection, data.Level);
                                         
-                                        //Bugged somewhere around here
+                                        //Calculate the difference between the first direction and second direction
                                         int subDirSideInt;
                                         if((int) data.BlockDirection > (int) data.SourceDirection)
                                         {
@@ -252,7 +255,7 @@ public class RegionChunk : MonoBehaviour
                                             }
                                         }
                                         
-
+                                        //Convert int to enum
                                         var subDirSide = (Sides) subDirSideInt;
                                         
                                         var vertSubDir = blockTypesProperties[data.BlockType]
@@ -262,17 +265,20 @@ public class RegionChunk : MonoBehaviour
                                         //Both offset is -2 because Sides for int 0 and 1 is occupied by sides up and down (not relevant in this calculation)
                                         int offset = Math.Abs((int) data.BlockDirection - 2 - (int) data.SubDirection - 2);
                                         
+                                        //Get the source water vertex height
                                         Sides reverseSide = ReverseHorizontalSide(pair.Key);
-                                        var ax = blockTypesProperties[data.BlockType].GetSideVertices(reverseSide,
+                                        var sourceVertices = blockTypesProperties[data.BlockType].GetSideVertices(reverseSide,
                                             new Vector3(localX, localY, localZ), data.SubDirection, data.Level + 1);
                                         
+                                        //Add the correct water block vertices to render
                                         waterVertices.AddRange(PartialMaxHeightVertex(
-                                            MaxHeightVertex(vertMainDir, vertSubDir, offset), ax, pair.Key == Sides.UP ? offset : 0,
+                                            MaxHeightVertex(vertMainDir, vertSubDir, offset), sourceVertices, pair.Key == Sides.UP ? offset : 0,
                                             sidePartialMaxVertices[pair.Key]));
-                                        // waterVertices.AddRange(MaxHeightVertex(vertMainDir, vertSubDir, offset));
                                     }
+                                    //If the water flows only from 1 direction
                                     else
                                     {
+                                        //If the water source is the same direction as the flowing water direction
                                         if (data.SourceDirection==data.BlockDirection)
                                         {
                                             waterVertices.AddRange(blockTypesProperties[data.BlockType]
@@ -282,42 +288,16 @@ public class RegionChunk : MonoBehaviour
                                         else
                                         {
                                             Sides reverseSide = ReverseHorizontalSide(pair.Key);
-                                            var ax = blockTypesProperties[data.BlockType].GetSideVertices(reverseSide,
+                                            var sourceVertices = blockTypesProperties[data.BlockType].GetSideVertices(reverseSide,
                                                 new Vector3(localX, localY, localZ), data.SourceDirection, data.Level + 1);
                                             var vertMainDir = blockTypesProperties[data.BlockType]
                                                 .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
                                                     data.BlockDirection, data.Level);
+                                            
                                             int offset =  pair.Key == Sides.UP ? Math.Abs((int) data.BlockDirection - 2 - (int) data.SourceDirection - 2) : 0;
-                                            waterVertices.AddRange(PartialMaxHeightVertex(vertMainDir, ax, offset,
-                                                //Probably need to change this dictionary to account for vertex rotation along y axis
+                                            //Get source vertex height
+                                            waterVertices.AddRange(PartialMaxHeightVertex(vertMainDir, sourceVertices, offset,
                                                 sidePartialMaxVertices[pair.Key]));
-                                            // if (pair.Key == Sides.UP)
-                                            // {
-                                            //     var ax = blockTypesProperties[data.BlockType].GetSideVertices(reverseSide,
-                                            //         new Vector3(localX, localY, localZ), data.SourceDirection, data.Level + 1);
-                                            //     var vertMainDir = blockTypesProperties[data.BlockType]
-                                            //         .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
-                                            //             data.BlockDirection, data.Level);
-                                            //     int offset = Math.Abs((int) data.BlockDirection - 2 - (int) data.SourceDirection - 2);
-                                            //     waterVertices.AddRange(PartialMaxHeightVertex(vertMainDir, ax, offset,
-                                            //         //Probably need to change this dictionary to account for vertex rotation along y axis
-                                            //         sidePartialMaxVertices[pair.Key]));
-                                            //
-                                            // }
-                                            // else
-                                            // {
-                                            //     var ax = blockTypesProperties[data.BlockType].GetSideVertices(reverseSide,
-                                            //         new Vector3(localX, localY, localZ), data.SourceDirection, data.Level + 1);
-                                            //     var vertMainDir = blockTypesProperties[data.BlockType]
-                                            //         .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
-                                            //             data.BlockDirection, data.Level);
-                                            //     int offset = Math.Abs((int) data.BlockDirection - 2 - (int) data.SourceDirection - 2);
-                                            //     waterVertices.AddRange(PartialMaxHeightVertex(vertMainDir, ax, 0,
-                                            //         //Probably need to change this dictionary to account for vertex rotation along y axis
-                                            //         sidePartialMaxVertices[pair.Key]));
-                                            // }
-
-
                                         }
                                     }
                                 }
@@ -401,6 +381,7 @@ public class RegionChunk : MonoBehaviour
         return res;
     }
 
+    //Only get the max height for vertices with index contained in idx
     private Vector3[] PartialMaxHeightVertex(Vector3[] vertices1, Vector3[] vertices2, int offset, int[] idx)
     {
         Vector3[] res = new Vector3[vertices1.Length];
