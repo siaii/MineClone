@@ -232,48 +232,8 @@ public class RegionChunk : MonoBehaviour
                                     //If the water flows from two different direction of water source
                                     if (data.BlockDirection != data.SubDirection)
                                     {
-                                        var vertMainDir = blockTypesProperties[data.BlockType]
-                                            .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
-                                                data.BlockDirection, data.Level);
-                                        
-                                        //Calculate the difference between the first direction and second direction
-                                        int subDirSideInt;
-                                        if((int) data.BlockDirection > (int) data.SourceDirection)
-                                        {
-                                            subDirSideInt = (((int) data.BlockDirection - 2 - ((int) data.SourceDirection - 2)) % 4 + (int) pair.Key) % 6;
-                                            if (subDirSideInt < 2)
-                                            {
-                                                subDirSideInt += 2;
-                                            }
-                                        }
-                                        else
-                                        {
-                                            subDirSideInt = (((int) data.BlockDirection - 2 - ((int) data.SourceDirection - 2)) + (int) pair.Key) % 6;
-                                            if (subDirSideInt < 2)
-                                            {
-                                                subDirSideInt += 4;
-                                            }
-                                        }
-                                        
-                                        //Convert int to enum
-                                        var subDirSide = (Sides) subDirSideInt;
-                                        
-                                        var vertSubDir = blockTypesProperties[data.BlockType]
-                                            .GetSideVertices(pair.Key == Sides.UP ? pair.Key : subDirSide, new Vector3(localX, localY, localZ),
-                                                data.SubDirection, data.Level);
-
-                                        //Both offset is -2 because Sides for int 0 and 1 is occupied by sides up and down (not relevant in this calculation)
-                                        int offset = Math.Abs((int) data.BlockDirection - 2 - (int) data.SubDirection - 2);
-                                        
-                                        //Get the source water vertex height
-                                        Sides reverseSide = ReverseHorizontalSide(pair.Key);
-                                        var sourceVertices = blockTypesProperties[data.BlockType].GetSideVertices(reverseSide,
-                                            new Vector3(localX, localY, localZ), data.SubDirection, data.Level + 1);
-                                        
                                         //Add the correct water block vertices to render
-                                        waterVertices.AddRange(PartialMaxHeightVertex(
-                                            MaxHeightVertex(vertMainDir, vertSubDir, offset), sourceVertices, pair.Key == Sides.UP ? offset : 0,
-                                            sidePartialMaxVertices[pair.Key]));
+                                        waterVertices.AddRange(CalculateUnevenVertices(data, pair, localX, localY, localZ));
                                     }
                                     //If the water flows only from 1 direction
                                     else
@@ -281,9 +241,28 @@ public class RegionChunk : MonoBehaviour
                                         //If the water source is the same direction as the flowing water direction
                                         if (data.SourceDirection==data.BlockDirection)
                                         {
-                                            waterVertices.AddRange(blockTypesProperties[data.BlockType]
-                                                .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
-                                                    data.BlockDirection, data.Level));
+                                            //If the source has sub direction, then the height will be different than straight
+                                            if (data.SourceDirection != data.SourceSubDirection)
+                                            {
+                                                Sides reverseSide = ReverseHorizontalSide(pair.Key);
+                                                var sourceVertices = blockTypesProperties[data.BlockType].GetSideVertices(reverseSide,
+                                                    new Vector3(localX, localY, localZ), data.SourceSubDirection, data.Level + 1);
+                                                var vertMainDir = blockTypesProperties[data.BlockType]
+                                                    .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
+                                                        data.BlockDirection, data.Level);
+                                            
+                                                int offset =  pair.Key == Sides.UP ? Math.Abs((int) data.BlockDirection - 2 - (int) data.SourceSubDirection - 2) : 0;
+                                                //Get source vertex height
+                                                waterVertices.AddRange(PartialMaxHeightVertex(vertMainDir, sourceVertices, offset,
+                                                    sidePartialMaxVertices[pair.Key]));
+
+                                            }
+                                            else
+                                            {
+                                                waterVertices.AddRange(blockTypesProperties[data.BlockType]
+                                                    .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
+                                                        data.BlockDirection, data.Level));
+                                            }
                                         }
                                         else
                                         {
@@ -335,6 +314,53 @@ public class RegionChunk : MonoBehaviour
         }
         _waterChunks[rChunkX][rChunkY][rChunkZ].BuildMesh(waterVertices.ToArray(), waterTris.ToArray(), waterUvs.ToArray());
         _renderChunks[rChunkX][rChunkY][rChunkZ].BuildMesh(vertices.ToArray(), tris.ToArray(), uvs.ToArray());
+    }
+
+    private Vector3[] CalculateUnevenVertices(BlockData data, KeyValuePair<Sides, Vector3Int> pair, int localX, int localY, int localZ)
+    {
+        var vertMainDir = blockTypesProperties[data.BlockType]
+            .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
+                data.BlockDirection, data.Level);
+
+        //Calculate the difference between the first direction and second direction
+        int subDirSideInt;
+        if ((int) data.BlockDirection > (int) data.SourceDirection)
+        {
+            subDirSideInt = (((int) data.BlockDirection - 2 - ((int) data.SourceDirection - 2)) % 4 + (int) pair.Key) % 6;
+            if (subDirSideInt < 2)
+            {
+                subDirSideInt += 2;
+            }
+        }
+        else
+        {
+            subDirSideInt = (((int) data.BlockDirection - 2 - ((int) data.SourceDirection - 2)) + (int) pair.Key) % 6;
+            if (subDirSideInt < 2)
+            {
+                subDirSideInt += 4;
+            }
+        }
+
+        //Convert int to enum
+        var subDirSide = (Sides) subDirSideInt;
+
+        var vertSubDir = blockTypesProperties[data.BlockType]
+            .GetSideVertices(pair.Key == Sides.UP ? pair.Key : subDirSide, new Vector3(localX, localY, localZ),
+                data.SubDirection, data.Level);
+
+        //Both offset is -2 because Sides for int 0 and 1 is occupied by sides up and down (not relevant in this calculation)
+        int offset = Math.Abs((int) data.BlockDirection - 2 - (int) data.SubDirection - 2);
+
+        //Get the source water vertex height
+        Sides reverseSide = ReverseHorizontalSide(pair.Key);
+        var sourceVertices = blockTypesProperties[data.BlockType].GetSideVertices(reverseSide,
+            new Vector3(localX, localY, localZ), data.SubDirection, data.Level + 1);
+
+        var resultVertices = PartialMaxHeightVertex(
+            MaxHeightVertex(vertMainDir, vertSubDir, offset), sourceVertices,
+            pair.Key == Sides.UP ? offset : 0,
+            sidePartialMaxVertices[pair.Key]);
+        return resultVertices;
     }
 
     private bool CheckIsNotSameBlock(BlockTypes currentBlockType, Vector3Int checkBlock)

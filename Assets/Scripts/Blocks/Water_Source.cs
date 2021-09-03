@@ -67,8 +67,16 @@ public class Water_Source : Block
                 }
             }
             change = SpreadWater(regChunk, blockPos, checkBlock, change, pair);
-            if(change && pair.Key==Sides.DOWN)
-                break;
+            if (change)
+            {
+                regChunk._chunkUpdater.updateNextTick.Enqueue(checkBlock);
+                regChunk._chunkUpdater.renderChunkToReDraw.Add(new Vector3Int(checkBlock.x / RenderChunk.xSize,
+                    checkBlock.y / RenderChunk.ySize, checkBlock.z / RenderChunk.zSize));
+                TerrainGen.instance.UpdateBorderingChunkData(regChunk, checkBlock,
+                    regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1]);
+                if(pair.Key==Sides.DOWN)
+                    break;
+            }
         }
 
         return change;
@@ -86,25 +94,29 @@ public class Water_Source : Block
         else if (regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockType ==
                  BlockTypes.WATER_FLOWING)
         {
-            if (regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection != pair.Key)
-            {
-                ExistingFlowWater(regChunk, checkBlock, pair, curBlockData);
-                change = true;
-            }
+            change = ExistingFlowWater(regChunk, checkBlock, pair, curBlockData);
         }
 
         return change;
     }
 
-    protected virtual void ExistingFlowWater(RegionChunk regChunk, Vector3Int checkBlock, KeyValuePair<Sides, Vector3Int> pair, BlockData curBlockData)
+    protected virtual bool ExistingFlowWater(RegionChunk regChunk, Vector3Int checkBlock, KeyValuePair<Sides, Vector3Int> pair, BlockData curBlockData)
     {
         //If level 4 then make infinite water source
-        regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key;
-        regChunk._chunkUpdater.updateNextTick.Enqueue(checkBlock);
-        regChunk._chunkUpdater.renderChunkToReDraw.Add(new Vector3Int(checkBlock.x / RenderChunk.xSize,
-            checkBlock.y / RenderChunk.ySize, checkBlock.z / RenderChunk.zSize));
-        TerrainGen.instance.UpdateBorderingChunkData(regChunk, checkBlock,
-            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1]);    
+        if (regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level == 4 
+            && regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection != pair.Key)
+        {
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockType = BlockTypes.WATER_SOURCE;
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection = pair.Key;
+        }
+        else
+        {
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = 4;
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection = pair.Key;
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key;
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SourceDirection = curBlockData.BlockDirection;
+        }
+        return true;
     }
 
     private void NewFlowWater(RegionChunk regChunk, Vector3Int checkBlock, KeyValuePair<Sides, Vector3Int> pair, BlockData curBlockData)
@@ -121,13 +133,8 @@ public class Water_Source : Block
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = pair.Key == Sides.DOWN ? 4 : curLevel - 1;
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SourceDirection =
                 curBlockData.BlockType == BlockTypes.WATER_SOURCE ? pair.Key : curBlockData.BlockDirection;
-            
-            //Add newly created water to queue only if it creates new flowing water                
-            regChunk._chunkUpdater.updateNextTick.Enqueue(checkBlock);
-            regChunk._chunkUpdater.renderChunkToReDraw.Add(new Vector3Int(checkBlock.x / RenderChunk.xSize,
-                checkBlock.y / RenderChunk.ySize, checkBlock.z / RenderChunk.zSize));
-            TerrainGen.instance.UpdateBorderingChunkData(regChunk, checkBlock,
-                regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1]);    
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SourceSubDirection =
+                curBlockData.BlockType == BlockTypes.WATER_SOURCE ? pair.Key : curBlockData.SubDirection;
             // Debug.Log(regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection + ", " + regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection);
         }
     }

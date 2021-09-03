@@ -8,6 +8,7 @@ public class BlockData
     private Sides _blockDirection = Sides.UP;
     private Sides _blockSubDirection = Sides.UP;
     private Sides _sourceDirection = Sides.UP;
+    private Sides _sourceSubDirection = Sides.UP;
     private int _level = 1;
     public BlockTypes BlockType
     {
@@ -37,5 +38,10 @@ public class BlockData
     {
         get => _sourceDirection;
         set => _sourceDirection = value;
+    }
+    public Sides SourceSubDirection
+    {
+        get => _sourceSubDirection;
+        set => _sourceSubDirection = value;
     }
 }

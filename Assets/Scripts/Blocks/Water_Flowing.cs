@@ -306,19 +306,28 @@ public class Water_Flowing : Water_Source
     }
     
     //Dont flow to other flowing water with higher level
-    protected override void ExistingFlowWater(RegionChunk regChunk, Vector3Int checkBlock, KeyValuePair<Sides, Vector3Int> pair, BlockData curBlockData)
+    protected override bool ExistingFlowWater(RegionChunk regChunk, Vector3Int checkBlock, KeyValuePair<Sides, Vector3Int> pair, BlockData curBlockData)
     {
-        if (curBlockData.Level < regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level ||
-            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockType == BlockTypes.WATER_SOURCE)
+        if (curBlockData.Level - 1 < regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level)
         {
-            return;
+            return false;
         }
-
-        if (curBlockData.Level - 1 >= regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level)
+        //else
+        if (curBlockData.Level - 1 == regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level)
         {
-            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = curBlockData.Level - 1;
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key;
         }
+        else if (curBlockData.Level - 1 > regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level)
+        {
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key; 
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection = pair.Key;
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SourceDirection =
+                curBlockData.BlockDirection;
+            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = curBlockData.Level - 1;
+        }
+
+        
+        return true;
 
     }
 }
