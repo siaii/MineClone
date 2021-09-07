@@ -30,7 +30,6 @@ public class ChunkUpdater : MonoBehaviour
             }
             ProcessTick();
             tickTimer = 0;
-            updateNextTick.Clear();
         }
 
         tickTimer += Time.fixedDeltaTime;

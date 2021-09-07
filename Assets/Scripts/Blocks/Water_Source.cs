@@ -13,7 +13,8 @@ public class Water_Source : Block
     public override bool BlockUpdate(RegionChunk regChunk, Vector3Int blockPos)
     {
         bool change = false;
-        var originalChunk = regChunk;
+        RegionChunk originalChunk = regChunk;
+        BlockData curBlockData = regChunk.BlocksData[blockPos.x + 1][blockPos.y][blockPos.z + 1];
         Dictionary<Sides, Vector3Int> updateDict = 
             new Dictionary<Sides, Vector3Int>()
             {
@@ -35,8 +36,8 @@ public class Water_Source : Block
             }
             
             //If the block to add is not in the current chunk
-            if (checkBlock.x < 0 || checkBlock.x + 1 > RegionChunk.chunkSizeX || checkBlock.z < 0 ||
-                checkBlock.z + 1 > RegionChunk.chunkSizeZ)
+            if (checkBlock.x < 0 || checkBlock.x >= RegionChunk.chunkSizeX || checkBlock.z < 0 ||
+                checkBlock.z >= RegionChunk.chunkSizeZ)
             {
                 TerrainGen _terrainGen = TerrainGen.instance;
                 var newChunkID = regChunk.chunkPos;
@@ -66,7 +67,12 @@ public class Water_Source : Block
                         break;
                 }
             }
-            change = SpreadWater(regChunk, blockPos, checkBlock, change, pair);
+
+            if (pair.Key == Sides.LEFT)
+            {
+                Debug.Log(regChunk.chunkPos + ": " + checkBlock);
+            }
+            change = SpreadWater(curBlockData, regChunk, checkBlock, change, pair);
             if (change)
             {
                 regChunk._chunkUpdater.updateNextTick.Enqueue(checkBlock);
@@ -82,10 +88,10 @@ public class Water_Source : Block
         return change;
     }
 
-    private bool SpreadWater(RegionChunk regChunk, Vector3Int blockPos, Vector3Int checkBlock, bool change,
+    private bool SpreadWater(BlockData curBlockData, RegionChunk regChunk, Vector3Int checkBlock, bool change,
         KeyValuePair<Sides, Vector3Int> pair)
     {
-        var curBlockData = regChunk.BlocksData[blockPos.x + 1][blockPos.y][blockPos.z + 1];
+        // var curBlockData = regChunk.BlocksData[blockPos.x + 1][blockPos.y][blockPos.z + 1];
         if (regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockType == BlockTypes.AIR)
         {
             NewFlowWater(regChunk, checkBlock, pair, curBlockData);
