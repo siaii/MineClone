@@ -321,8 +321,6 @@ public class Water_Flowing : Water_Source
         {
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key; 
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection = pair.Key;
-            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SourceDirection =
-                curBlockData.BlockDirection;
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = curBlockData.Level - 1;
         }
 

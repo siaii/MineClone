@@ -67,11 +67,7 @@ public class Water_Source : Block
                         break;
                 }
             }
-
-            if (pair.Key == Sides.LEFT)
-            {
-                Debug.Log(regChunk.chunkPos + ": " + checkBlock);
-            }
+            
             change = SpreadWater(curBlockData, regChunk, checkBlock, change, pair);
             if (change)
             {
@@ -120,7 +116,6 @@ public class Water_Source : Block
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = 4;
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection = pair.Key;
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key;
-            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SourceDirection = curBlockData.BlockDirection;
         }
         return true;
     }
@@ -137,11 +132,6 @@ public class Water_Source : Block
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key;
 
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = pair.Key == Sides.DOWN ? 4 : curLevel - 1;
-            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SourceDirection =
-                curBlockData.BlockType == BlockTypes.WATER_SOURCE ? pair.Key : curBlockData.BlockDirection;
-            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SourceSubDirection =
-                curBlockData.BlockType == BlockTypes.WATER_SOURCE ? pair.Key : curBlockData.SubDirection;
-            // Debug.Log(regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection + ", " + regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection);
         }
     }
 }

@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using Unity.Mathematics;
 using UnityEngine;
 
 public class RegionChunk : MonoBehaviour
@@ -217,76 +218,132 @@ public class RegionChunk : MonoBehaviour
                             (blockTypesProperties[BlocksData[x][y][z].BlockType].isFluid && CheckIsNotSameBlock(BlocksData[x][y][z].BlockType, checkBlock) 
                                 && pair.Key == Sides.UP))
                         {
-                            BlockData data = BlocksData[x][y][z];
+                            BlockData curData = BlocksData[x][y][z];
                             int localX = x - startX;
                             int localY = y - startY;
                             int localZ = z - startZ;
                             int oldLength;
                             //Different render chunk for water and solid
-                            if (blockTypesProperties[data.BlockType].isFluid)
+                            if (blockTypesProperties[curData.BlockType].isFluid)
                             {
                                 oldLength = waterVertices.Count;
                                 //If isLeveled (flowing water only for now)
-                                if (blockTypesProperties[data.BlockType].isLeveled)
+                                if (blockTypesProperties[curData.BlockType].isLeveled)
                                 {
-                                    //If the water flows from two different direction of water source
-                                    if (data.BlockDirection != data.SubDirection)
+                                    var localRenderChunkPos = new Vector3(localX, localY, localZ);
+                                    var mainVert = blockTypesProperties[curData.BlockType]
+                                        .GetSideVertices(pair.Key, localRenderChunkPos, curData.BlockDirection, curData.Level);
+                                    Vector3[] res = (Vector3[]) mainVert.Clone();
+                                    if (pair.Key == Sides.UP)
                                     {
-                                        //Add the correct water block vertices to render
-                                        waterVertices.AddRange(CalculateUnevenVertices(data, pair, localX, localY, localZ));
+                                        Dictionary<Sides, Vector3Int> checkDict = new Dictionary<Sides, Vector3Int>()
+                                        {
+                                            {Sides.RIGHT, Vector3Int.right},
+                                            {Sides.FRONT, Vector3Int.back},
+                                            {Sides.LEFT, Vector3Int.left},
+                                            {Sides.BACK, Vector3Int.forward}
+                                        };
+
+                                        foreach (var vertCheck in checkDict)
+                                        {
+                                            Vector3Int vertCheckBlock = new Vector3Int(x, y, z) + vertCheck.Value;
+                                            BlockData vertCheckData =
+                                                BlocksData[vertCheckBlock.x][vertCheckBlock.y][vertCheckBlock.z];
+
+                                            Vector3[] sideVertMainDirection =
+                                            {
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                            };
+                                            Vector3[] sideVertSubDirection =
+                                            {
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                            };
+                                            if (vertCheckData.BlockType == BlockTypes.WATER_FLOWING && vertCheckData.Level>=curData.Level 
+                                                || vertCheckData.BlockType == BlockTypes.WATER_SOURCE)
+                                            {
+                                                sideVertMainDirection = blockTypesProperties[vertCheckData.BlockType]
+                                                    .GetSideVertices(
+                                                        ConvertGlobalSideToLocalSide(ReverseHorizontalSide(vertCheck.Key),
+                                                            vertCheckData.BlockDirection),
+                                                        localRenderChunkPos + vertCheck.Value,
+                                                        vertCheckData.BlockDirection, vertCheckData.Level);
+                                                sideVertSubDirection = blockTypesProperties[vertCheckData.BlockType]
+                                                    .GetSideVertices(
+                                                        ConvertGlobalSideToLocalSide(ReverseHorizontalSide(vertCheck.Key),
+                                                            vertCheckData.SubDirection),
+                                                        localRenderChunkPos + vertCheck.Value,
+                                                        vertCheckData.SubDirection, vertCheckData.Level);
+                                            }
+
+                                            int offset = 0;
+                                            switch (curData.BlockDirection)
+                                            {
+                                                case Sides.RIGHT:
+                                                    offset = 1;
+                                                    break;
+                                                case Sides.FRONT:
+                                                    offset = 2;
+                                                    break;
+                                                case Sides.LEFT:
+                                                    offset = 3;
+                                                    break;
+                                            }
+                                            
+                                            switch (vertCheck.Key)
+                                            {
+                                                case Sides.RIGHT:
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertMainDirection[0].y);
+                                                    res[(2 + offset) % 4].y = Mathf.Max(res[(2 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    res[(2 + offset) % 4].y = Mathf.Max(res[(2 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    break;
+                                                case Sides.FRONT:
+                                                    res[(2 + offset) % 4].y = Mathf.Max(res[(2 + offset) % 4].y, sideVertMainDirection[0].y);
+                                                    res[(1 + offset) % 4].y = Mathf.Max(res[(1 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    res[(2 + offset) % 4].y = Mathf.Max(res[(2 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    res[(1 + offset) % 4].y = Mathf.Max(res[(1 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    break;
+                                                case Sides.LEFT:
+                                                    res[(1 + offset) % 4].y = Mathf.Max(res[(1 + offset) % 4].y, sideVertMainDirection[0].y);
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    res[(1 + offset) % 4].y = Mathf.Max(res[(1 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    break;
+                                                case Sides.BACK:
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertMainDirection[0].y);
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    break;
+                                                default:
+                                                    print("error");
+                                                    break;
+                                            }
+                                        }
                                     }
-                                    //If the water flows only from 1 direction
+                                    else if(pair.Key == Sides.DOWN)
+                                    {
+                                        //Do nothing
+                                    }
                                     else
                                     {
-                                        //If the water source is the same direction as the flowing water direction
-                                        if (data.SourceDirection==data.BlockDirection)
-                                        {
-                                            //If the source has sub direction, then the height will be different than straight
-                                            if (data.SourceDirection != data.SourceSubDirection)
-                                            {
-                                                Sides reverseSide = ReverseHorizontalSide(pair.Key);
-                                                var sourceVertices = blockTypesProperties[data.BlockType].GetSideVertices(reverseSide,
-                                                    new Vector3(localX, localY, localZ), data.SourceSubDirection, data.Level + 1);
-                                                var vertMainDir = blockTypesProperties[data.BlockType]
-                                                    .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
-                                                        data.BlockDirection, data.Level);
-                                            
-                                                int offset =  pair.Key == Sides.UP ? Math.Abs((int) data.BlockDirection - 2 - (int) data.SourceSubDirection - 2) : 0;
-                                                //Get source vertex height
-                                                waterVertices.AddRange(PartialMaxHeightVertex(vertMainDir, sourceVertices, offset,
-                                                    sidePartialMaxVertices[pair.Key]));
-
-                                            }
-                                            else
-                                            {
-                                                waterVertices.AddRange(blockTypesProperties[data.BlockType]
-                                                    .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
-                                                        data.BlockDirection, data.Level));
-                                            }
-                                        }
-                                        else
-                                        {
-                                            Sides reverseSide = ReverseHorizontalSide(pair.Key);
-                                            var sourceVertices = blockTypesProperties[data.BlockType].GetSideVertices(reverseSide,
-                                                new Vector3(localX, localY, localZ), data.SourceDirection, data.Level + 1);
-                                            var vertMainDir = blockTypesProperties[data.BlockType]
-                                                .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
-                                                    data.BlockDirection, data.Level);
-                                            
-                                            int offset =  pair.Key == Sides.UP ? Math.Abs((int) data.BlockDirection - 2 - (int) data.SourceDirection - 2) : 0;
-                                            //Get source vertex height
-                                            waterVertices.AddRange(PartialMaxHeightVertex(vertMainDir, sourceVertices, offset,
-                                                sidePartialMaxVertices[pair.Key]));
-                                        }
+                                        
                                     }
+                                    waterVertices.AddRange(res);
                                 }
                                 else
                                 {
-                                    waterVertices.AddRange(blockTypesProperties[data.BlockType]
+                                    waterVertices.AddRange(blockTypesProperties[curData.BlockType]
                                         .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ)));
                                 }
-                                waterUvs.AddRange(GetBlockSideUVs(data.BlockType, pair.Key));
-                                var blockTris = blockTypesProperties[data.BlockType].GetSideTriangles(pair.Key);
+                                waterUvs.AddRange(GetBlockSideUVs(curData.BlockType, pair.Key));
+                                var blockTris = blockTypesProperties[curData.BlockType].GetSideTriangles(pair.Key);
                                 
                                 foreach (var offset in blockTris)
                                 {
@@ -296,11 +353,11 @@ public class RegionChunk : MonoBehaviour
                             else
                             {
                                 oldLength = vertices.Count;
-                                vertices.AddRange(blockTypesProperties[data.BlockType]
+                                vertices.AddRange(blockTypesProperties[curData.BlockType]
                                     .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ)));
 
-                                uvs.AddRange(GetBlockSideUVs(data.BlockType, pair.Key, data.BlockDirection));
-                                var blockTris = blockTypesProperties[data.BlockType].GetSideTriangles(pair.Key);
+                                uvs.AddRange(GetBlockSideUVs(curData.BlockType, pair.Key, curData.BlockDirection));
+                                var blockTris = blockTypesProperties[curData.BlockType].GetSideTriangles(pair.Key);
                                 foreach (var offset in blockTris)
                                 {
                                     tris.Add(oldLength + offset);
@@ -322,30 +379,30 @@ public class RegionChunk : MonoBehaviour
             .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
                 data.BlockDirection, data.Level);
 
-        //Calculate the difference between the first direction and second direction
-        int subDirSideInt;
-        if ((int) data.BlockDirection > (int) data.SourceDirection)
-        {
-            subDirSideInt = (((int) data.BlockDirection - 2 - ((int) data.SourceDirection - 2)) % 4 + (int) pair.Key) % 6;
-            if (subDirSideInt < 2)
-            {
-                subDirSideInt += 2;
-            }
-        }
-        else
-        {
-            subDirSideInt = (((int) data.BlockDirection - 2 - ((int) data.SourceDirection - 2)) + (int) pair.Key) % 6;
-            if (subDirSideInt < 2)
-            {
-                subDirSideInt += 4;
-            }
-        }
+        // //Calculate the difference between the first direction and second direction
+        // int subDirSideInt;
+        // if ((int) data.BlockDirection > (int) data.SourceDirection)
+        // {
+        //     subDirSideInt = (((int) data.BlockDirection - 2 - ((int) data.SourceDirection - 2)) % 4 + (int) pair.Key) % 6;
+        //     if (subDirSideInt < 2)
+        //     {
+        //         subDirSideInt += 2;
+        //     }
+        // }
+        // else
+        // {
+        //     subDirSideInt = (((int) data.BlockDirection - 2 - ((int) data.SourceDirection - 2)) + (int) pair.Key) % 6;
+        //     if (subDirSideInt < 2)
+        //     {
+        //         subDirSideInt += 4;
+        //     }
+        // }
 
         //Convert int to enum
-        var subDirSide = (Sides) subDirSideInt;
+        // var subDirSide = (Sides) subDirSideInt;
 
         var vertSubDir = blockTypesProperties[data.BlockType]
-            .GetSideVertices(pair.Key == Sides.UP ? pair.Key : subDirSide, new Vector3(localX, localY, localZ),
+            .GetSideVertices(pair.Key == Sides.UP ? pair.Key : Sides.UP, new Vector3(localX, localY, localZ),
                 data.SubDirection, data.Level);
 
         //Both offset is -2 because Sides for int 0 and 1 is occupied by sides up and down (not relevant in this calculation)
@@ -437,6 +494,34 @@ public class RegionChunk : MonoBehaviour
             default:
                 return side;
         }
+    }
+
+    //Horizontal side only, still not working correctly
+    private Sides ConvertGlobalSideToLocalSide(Sides globalSide, Sides blockDirection)
+    {
+        int offset = 0;
+        switch (blockDirection)
+        {
+            case Sides.BACK:
+                offset = 0;
+                break;
+            case Sides.RIGHT:
+                offset = 1;
+                break;
+            case Sides.FRONT:
+                offset = 2;
+                break;
+            case Sides.LEFT:
+                offset = 3;
+                break;
+        }
+
+        int res = (((int) globalSide - offset) % Enum.GetNames(typeof(Sides)).Length + Enum.GetNames(typeof(Sides)).Length) % Enum.GetNames(typeof(Sides)).Length;
+
+        if (res < 2)
+            res += 4;
+        
+        return (Sides) res;
     }
 
     public void SetChunkPos(int x, int z)

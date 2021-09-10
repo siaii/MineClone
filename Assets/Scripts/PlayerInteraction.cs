@@ -104,7 +104,7 @@ public class PlayerInteraction : MonoBehaviour
             {
                 collidedChunk = hit.collider.transform.parent.GetComponent<RegionChunk>();
 
-                if (Input.GetAxis("Fire1")>0)
+                if (Input.GetButton("Fire1"))
                 {
                     //Make sure the coordinate to get the block is the correct block, thus the -0.5f
                     adjustedHitCoord = hit.point + hit.normal * -0.5f;
