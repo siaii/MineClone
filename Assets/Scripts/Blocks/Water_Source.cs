@@ -131,7 +131,14 @@ public class Water_Source : Block
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection = pair.Key;
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key;
 
-            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = pair.Key == Sides.DOWN ? 4 : curLevel - 1;
+            if (curBlockData.BlockDirection == Sides.DOWN)
+            {
+                regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = 4;
+            }  
+            else
+            {
+                regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = pair.Key == Sides.DOWN ? 4 : curLevel - 1;
+            }
         }
     }
 }

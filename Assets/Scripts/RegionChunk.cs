@@ -333,7 +333,106 @@ public class RegionChunk : MonoBehaviour
                                     }
                                     else
                                     {
-                                        
+                                        Dictionary<Sides, Vector3Int> checkDict = new Dictionary<Sides, Vector3Int>()
+                                        {
+                                            {Sides.UP, Vector3Int.up},
+                                            {Sides.RIGHT, Vector3Int.right},
+                                            {Sides.BACK, Vector3Int.forward},
+                                            {Sides.LEFT, Vector3Int.left},
+                                        };
+
+                                        foreach (var vertCheck in checkDict)
+                                        {
+                                            //Rotate the vertCheck
+                                            var adjustedVertCheck =
+                                                new KeyValuePair<Sides, Vector3Int>(
+                                                    ConvertLocalToGlobalSide( //rename this
+                                                        vertCheck.Key,
+                                                        ConvertLocalToGlobalSide(pair.Key, curData.BlockDirection)),
+                                                    sideVector[
+                                                        ConvertLocalToGlobalSide(
+                                                            vertCheck.Key,
+                                                            ConvertLocalToGlobalSide(pair.Key, curData.BlockDirection))]);
+                                            
+                                            Vector3Int vertCheckBlock = new Vector3Int(x, y, z) + adjustedVertCheck.Value;
+                                            BlockData vertCheckData =
+                                                BlocksData[vertCheckBlock.x][vertCheckBlock.y][vertCheckBlock.z];
+
+                                            Vector3[] sideVertMainDirection =
+                                            {
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                            };
+                                            Vector3[] sideVertSubDirection =
+                                            {
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                            };
+                                            if (vertCheckData.BlockType == BlockTypes.WATER_FLOWING && vertCheckData.Level>=curData.Level 
+                                                || vertCheckData.BlockType == BlockTypes.WATER_SOURCE)
+                                            {
+                                                sideVertMainDirection = blockTypesProperties[vertCheckData.BlockType]
+                                                    .GetSideVertices(
+                                                        ConvertGlobalSideToLocalSide(ReverseHorizontalSide(adjustedVertCheck.Key), vertCheckData.BlockDirection),
+                                                        localRenderChunkPos + adjustedVertCheck.Value, //Adjust vertcheck value here later
+                                                        vertCheckData.BlockDirection, vertCheckData.Level);
+                                                sideVertSubDirection = blockTypesProperties[vertCheckData.BlockType]
+                                                    .GetSideVertices(
+                                                        ConvertGlobalSideToLocalSide(ReverseHorizontalSide(adjustedVertCheck.Key), vertCheckData.SubDirection),
+                                                        localRenderChunkPos + adjustedVertCheck.Value,
+                                                        vertCheckData.SubDirection, vertCheckData.Level);
+                                            }
+
+                                            int offset = 0;
+                                            //Change this
+                                            // switch (curData.BlockDirection)
+                                            // {
+                                            //     case Sides.RIGHT:
+                                            //         offset = 1;
+                                            //         break;
+                                            //     case Sides.FRONT:
+                                            //         offset = 2;
+                                            //         break;
+                                            //     case Sides.LEFT:
+                                            //         offset = 3;
+                                            //         break;
+                                            // }
+                                            //Need to adjust this for sides, possibly change this switch to pair.Key
+                                            switch (vertCheck.Key)
+                                            {
+                                                case Sides.RIGHT:
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertMainDirection[0].y);
+                                                    // res[(2 + offset) % 4].y = Mathf.Max(res[(2 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    // res[(2 + offset) % 4].y = Mathf.Max(res[(2 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    break;
+                                                case Sides.BACK:
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertMainDirection[0].y);
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    break;
+                                                case Sides.LEFT:
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    // res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    // res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    break;
+                                                case Sides.UP:
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertMainDirection[0].y);
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    break;
+                                                default:
+                                                    print("error");
+                                                    break;
+                                            }
+                                        }
                                     }
                                     waterVertices.AddRange(res);
                                 }
@@ -499,6 +598,11 @@ public class RegionChunk : MonoBehaviour
     //Horizontal side only, still not working correctly
     private Sides ConvertGlobalSideToLocalSide(Sides globalSide, Sides blockDirection)
     {
+        if (globalSide == Sides.UP || globalSide == Sides.DOWN)
+        {
+            return globalSide;
+        }
+
         int offset = 0;
         switch (blockDirection)
         {
@@ -520,6 +624,41 @@ public class RegionChunk : MonoBehaviour
 
         if (res < 2)
             res += 4;
+        
+        return (Sides) res;
+    }
+    
+    private Sides ConvertLocalToGlobalSide(Sides localSide, Sides blockDirection)
+    {
+        if (localSide == Sides.UP || localSide == Sides.DOWN)
+        {
+            return localSide;
+        }
+
+        int offset = 0;
+        switch (blockDirection)
+        {
+            case Sides.BACK:
+                offset = 0;
+                break;
+            case Sides.RIGHT:
+                offset = 1;
+                break;
+            case Sides.FRONT:
+                offset = 2;
+                break;
+            case Sides.LEFT:
+                offset = 3;
+                break;
+        }
+
+        int res = ((int) localSide + offset) % Enum.GetNames(typeof(Sides)).Length;
+
+        if (res < 2)
+            res += 2;
+
+        if (offset == 3 && localSide == Sides.BACK)
+            res += 2;
         
         return (Sides) res;
     }
