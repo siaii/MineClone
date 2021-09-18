@@ -163,8 +163,7 @@ public class PlayerInteraction : MonoBehaviour
             StartCoroutine(collidedChunk.CalculateDrawnMesh(blockCoord.x / RenderChunk.xSize,
                 blockCoord.y / RenderChunk.ySize, blockCoord.z / RenderChunk.zSize));
 
-            if (RegionChunk
-                .blockTypesProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]
+            if (BlockPropertyManager.blockProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]
                     .BlockType].isTransparent)
             {
                 //Rerender the neighbouring render chunks
