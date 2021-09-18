@@ -1202,6 +1202,7 @@ MonoBehaviour:
   maxHitDistance: 4
   _inventoryView: {fileID: 4041948128877387073}
   blockHighlightPrefab: {fileID: 9174112927557162602, guid: a66c3b6eb7301b94fb25ceafaa626e4d, type: 3}
+  blockDestroyProgressMaterial: {fileID: 2100000, guid: fd4c9d0fec56bd645b6f2abb5cbd65fe, type: 2}
 --- !u!136 &5287522421205559364
 CapsuleCollider:
   m_ObjectHideFlags: 0

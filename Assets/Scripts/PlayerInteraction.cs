@@ -1,3 +1,4 @@
+using System;
 using System.Collections.Generic;
 using UnityEngine;
 
@@ -13,8 +14,10 @@ public class PlayerInteraction : MonoBehaviour
     private GameObject blockHighlight;
 
     private float delayTimer;
-    private float destroyHoldTimer = 0;
+    private float destroyHoldTimer = 0f;
     private bool resetHoldTimer = false;
+    private bool prevFrameMouse1Down = false;
+    
 
     private readonly Dictionary<Sides, Vector3Int> sideVector = new Dictionary<Sides, Vector3Int>()
     {
@@ -30,6 +33,8 @@ public class PlayerInteraction : MonoBehaviour
     [SerializeField] private float maxHitDistance = 5f;
     [SerializeField] private InventoryView _inventoryView;
     [SerializeField] private GameObject blockHighlightPrefab;
+
+    [SerializeField] private Material blockDestroyProgressMaterial;
 
     // Start is called before the first frame update
     void Start()
@@ -94,6 +99,21 @@ public class PlayerInteraction : MonoBehaviour
         RegionChunk collidedChunk = null;
         Vector3Int blockCoord = new Vector3Int();
         Vector3 adjustedHitCoord = new Vector3();
+        
+        if (Input.GetButtonUp("Fire1"))
+        {
+            resetHoldTimer = true;
+        }
+        
+        //If block being interacted changes, reset the timer
+        if (resetHoldTimer)
+        {
+            destroyHoldTimer = 0f;
+                    
+            //CoverageLevel, reset to 0
+            blockDestroyProgressMaterial.SetFloat("Vector1_d826b697e8844e329896e9ece9f67edf", destroyHoldTimer);
+        }
+        
         if ((Input.GetButton("Fire1") || Input.GetButton("Fire2")) && !_inventoryView.IsInventoryActive)
         {
             RaycastHit hit;
@@ -105,6 +125,7 @@ public class PlayerInteraction : MonoBehaviour
 
                 if (Input.GetButton("Fire1"))
                 {
+                    prevFrameMouse1Down = true;
                     //Make sure the coordinate to get the block is the correct block, thus the -0.5f
                     adjustedHitCoord = hit.point + hit.normal * -0.5f;
                     var worldBlockCoord = new Vector3Int(Mathf.RoundToInt(adjustedHitCoord.x), Mathf.RoundToInt(adjustedHitCoord.y),
@@ -112,28 +133,30 @@ public class PlayerInteraction : MonoBehaviour
                     
                     //Local within chunk (0-15) block coordinate
                     blockCoord = WorldCoordToChunkBlockCoord(adjustedHitCoord);
-                    
-                    //If block being interacted changes, reset the timer
-                    if (resetHoldTimer)
-                    {
-                        destroyHoldTimer = 0;
-                    }
+
+                    float destroyTime = BlockPropertyManager
+                        .blockProperties[
+                            collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType]
+                        .destroyTime;
+
                     //Only count the timer if the block is destroyable
-                    else if (BlockPropertyManager
+                    if (BlockPropertyManager
                         .blockProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType]
                         .isDestroyable)
                     {
                         destroyHoldTimer += Time.deltaTime;
                     }
 
-                    if (destroyHoldTimer > BlockPropertyManager.blockProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType].destroyTime)
+                    if (destroyHoldTimer > destroyTime)
                     {
-                        print(destroyHoldTimer);
                         //Possibly keep the record of modified blocks in TerrainGen
                         collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType = BlockTypes.AIR;
-                        destroyHoldTimer = 0;
+                        destroyHoldTimer = 0f;
                         blockChange = true;
                     }
+
+                    //CoverageLevel
+                    blockDestroyProgressMaterial.SetFloat("Vector1_d826b697e8844e329896e9ece9f67edf", destroyHoldTimer / destroyTime);
                 }
                 else if (delayTimer >= mouseInputDelay)
                 {
@@ -178,7 +201,7 @@ public class PlayerInteraction : MonoBehaviour
                 }
             }
         }
-
+        
         if (blockChange)
         {
             //Calculate new mesh
