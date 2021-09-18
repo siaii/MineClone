@@ -1198,7 +1198,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 8b8f793af40516a49a00cc0e92d8f71f, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  mouseInputDelay: 0.15
+  mouseInputDelay: 0.2
   maxHitDistance: 4
   _inventoryView: {fileID: 4041948128877387073}
   blockHighlightPrefab: {fileID: 9174112927557162602, guid: a66c3b6eb7301b94fb25ceafaa626e4d, type: 3}

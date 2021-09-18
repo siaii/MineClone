@@ -9,6 +9,10 @@ public abstract class Block
 
     public virtual bool isFluid => false;
 
+    public virtual bool isDestroyable => true;
+
+    public virtual float destroyTime => 0.5f; //Seconds
+
     protected readonly Dictionary<Sides, Vector3[]> _verticesBase = new Dictionary<Sides, Vector3[]>()
     {
         {

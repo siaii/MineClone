@@ -13,7 +13,9 @@ public class PlayerInteraction : MonoBehaviour
     private GameObject blockHighlight;
 
     private float delayTimer;
-    
+    private float destroyHoldTimer = 0;
+    private bool resetHoldTimer = false;
+
     private readonly Dictionary<Sides, Vector3Int> sideVector = new Dictionary<Sides, Vector3Int>()
     {
         {Sides.UP, Vector3Int.up},
@@ -24,7 +26,7 @@ public class PlayerInteraction : MonoBehaviour
         {Sides.RIGHT, Vector3Int.right}
     };
 
-    [SerializeField] private float mouseInputDelay = 0.05f; //Delay between mouse input being processed
+    [SerializeField] private float mouseInputDelay = 0.15f; //Delay between mouse input being processed
     [SerializeField] private float maxHitDistance = 5f;
     [SerializeField] private InventoryView _inventoryView;
     [SerializeField] private GameObject blockHighlightPrefab;
@@ -44,13 +46,9 @@ public class PlayerInteraction : MonoBehaviour
     {
         _cameraCenter = new Vector2(_mainCamera.pixelWidth / 2, _mainCamera.pixelHeight / 2);
         delayTimer += Time.deltaTime;
-        if (delayTimer >= mouseInputDelay)
-        {
-            ProcessMouseInput();
-            //Reset delay timer only after block change
-        }
-
+        resetHoldTimer = false;
         ProcessBlockHighlight();
+        ProcessMouseInput();
     }
 
     void ProcessBlockHighlight()
@@ -65,7 +63,7 @@ public class PlayerInteraction : MonoBehaviour
         {
             //Make sure the coordinate to get the block is the correct block, thus the -0.5f
             adjustedHitCoord = hit.point + hit.normal * -0.5f;
-            //Local within chunk (0-15) block coordinate
+            //Global coordinate rounded to int
             blockCoord = new Vector3Int(Mathf.RoundToInt(adjustedHitCoord.x), Mathf.RoundToInt(adjustedHitCoord.y),
                 Mathf.RoundToInt(adjustedHitCoord.z));
 
@@ -78,6 +76,7 @@ public class PlayerInteraction : MonoBehaviour
                 blockHighlight.transform.position = blockCoord;
                 blockHighlight.transform.rotation = Quaternion.identity;
                 prevLookedBlock = blockCoord;
+                resetHoldTimer = true;
             } 
         }
         else
@@ -108,12 +107,35 @@ public class PlayerInteraction : MonoBehaviour
                 {
                     //Make sure the coordinate to get the block is the correct block, thus the -0.5f
                     adjustedHitCoord = hit.point + hit.normal * -0.5f;
+                    var worldBlockCoord = new Vector3Int(Mathf.RoundToInt(adjustedHitCoord.x), Mathf.RoundToInt(adjustedHitCoord.y),
+                        Mathf.RoundToInt(adjustedHitCoord.z));
+                    
                     //Local within chunk (0-15) block coordinate
                     blockCoord = WorldCoordToChunkBlockCoord(adjustedHitCoord);
-                    //Possibly keep the record of modified blocks in TerrainGen
-                    collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType = BlockTypes.AIR;
+                    
+                    //If block being interacted changes, reset the timer
+                    if (resetHoldTimer)
+                    {
+                        destroyHoldTimer = 0;
+                    }
+                    //Only count the timer if the block is destroyable
+                    else if (BlockPropertyManager
+                        .blockProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType]
+                        .isDestroyable)
+                    {
+                        destroyHoldTimer += Time.deltaTime;
+                    }
+
+                    if (destroyHoldTimer > BlockPropertyManager.blockProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType].destroyTime)
+                    {
+                        print(destroyHoldTimer);
+                        //Possibly keep the record of modified blocks in TerrainGen
+                        collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType = BlockTypes.AIR;
+                        destroyHoldTimer = 0;
+                        blockChange = true;
+                    }
                 }
-                else
+                else if (delayTimer >= mouseInputDelay)
                 {
                     if (_playerInventory.InventoryItems[_playerInventory.ActiveItemIndex].itemContained == null ||
                         _playerInventory.InventoryItems[_playerInventory.ActiveItemIndex].itemCount == 0)
@@ -134,7 +156,7 @@ public class PlayerInteraction : MonoBehaviour
                     //Local within chunk (0-15) block coordinate
                     blockCoord = WorldCoordToChunkBlockCoord(adjustedHitCoord);
                     
-                    
+                    //Check if there are anything occupying the block location
                     Vector3 castCenter = new Vector3(Mathf.RoundToInt(adjustedHitCoord.x), Mathf.RoundToInt(adjustedHitCoord.y),
                         Mathf.RoundToInt(adjustedHitCoord.z));
                     bool existsCollision = Physics.CheckBox(castCenter, new Vector3(0.48f, 0.48f, 0.48f));
@@ -152,8 +174,8 @@ public class PlayerInteraction : MonoBehaviour
                     collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType = placedBlockType;
                     collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockDirection =
                         placedDirection;
+                    blockChange = true;
                 }
-                blockChange = true;
             }
         }
 
