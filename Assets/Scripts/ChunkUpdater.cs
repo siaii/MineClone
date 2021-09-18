@@ -6,8 +6,8 @@ public class ChunkUpdater : MonoBehaviour
 {
     [SerializeField] private RegionChunk _regionChunk;
     [SerializeField] private float tickSpeed;
-    public Queue<Vector3Int> updateCurrentTick = new Queue<Vector3Int>();
-    public Queue<Vector3Int> updateNextTick = new Queue<Vector3Int>();
+    public HashSet<Vector3Int> updateCurrentTick = new HashSet<Vector3Int>();
+    public HashSet<Vector3Int> updateNextTick = new HashSet<Vector3Int>();
 
     public HashSet<Vector3Int> renderChunkToReDraw = new HashSet<Vector3Int>();
     
@@ -24,10 +24,8 @@ public class ChunkUpdater : MonoBehaviour
     {
         if (tickTimer >= tickSpeed && updateNextTick.Count>0)
         {
-            while (updateNextTick.Count > 0)
-            {
-                updateCurrentTick.Enqueue(updateNextTick.Dequeue());
-            }
+            updateCurrentTick = new HashSet<Vector3Int>(updateNextTick);
+            updateNextTick.Clear();
             ProcessTick();
             tickTimer = 0;
         }
@@ -38,10 +36,9 @@ public class ChunkUpdater : MonoBehaviour
     void ProcessTick()
     {
         bool blockChanged = false;
-        
-        while (updateCurrentTick.Count > 0)
+
+        foreach (var processCoord in updateCurrentTick)
         {
-            var processCoord = updateCurrentTick.Dequeue();
             var blockData = _regionChunk.BlocksData[processCoord.x + 1][processCoord.y][processCoord.z + 1];
             if (RegionChunk.blockTypesProperties[blockData.BlockType].BlockUpdate(_regionChunk, processCoord))
             {
@@ -63,5 +60,14 @@ public class ChunkUpdater : MonoBehaviour
             StartCoroutine(_regionChunk.CalculateDrawnMesh(idx.x, idx.y, idx.z));
         }
         renderChunkToReDraw.Clear();
+    }
+
+    public void AddToUpdateNextTick(Vector3Int blockPos)
+    {
+        updateNextTick.Add(blockPos);
+        renderChunkToReDraw.Add(new Vector3Int(blockPos.x / RenderChunk.xSize,
+            blockPos.y / RenderChunk.ySize, blockPos.z / RenderChunk.zSize));
+        TerrainGen.instance.UpdateBorderingChunkData(_regionChunk, blockPos,
+            _regionChunk.BlocksData[blockPos.x + 1][blockPos.y][blockPos.z + 1]);
     }
 }

@@ -61,4 +61,4 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   _regionChunk: {fileID: 8017198263036184830}
-  tickSpeed: 1
+  tickSpeed: 0.8

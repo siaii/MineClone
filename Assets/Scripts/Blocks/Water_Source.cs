@@ -71,11 +71,7 @@ public class Water_Source : Block
             change = SpreadWater(curBlockData, regChunk, checkBlock, change, pair);
             if (change)
             {
-                regChunk._chunkUpdater.updateNextTick.Enqueue(checkBlock);
-                regChunk._chunkUpdater.renderChunkToReDraw.Add(new Vector3Int(checkBlock.x / RenderChunk.xSize,
-                    checkBlock.y / RenderChunk.ySize, checkBlock.z / RenderChunk.zSize));
-                TerrainGen.instance.UpdateBorderingChunkData(regChunk, checkBlock,
-                    regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1]);
+                regChunk._chunkUpdater.AddToUpdateNextTick(checkBlock);
                 if(pair.Key==Sides.DOWN)
                     break;
             }

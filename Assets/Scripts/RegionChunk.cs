@@ -207,16 +207,8 @@ public class RegionChunk : MonoBehaviour
                         }
                         Vector3Int directionVectorInt = new Vector3Int(Mathf.RoundToInt(directionVector.x), Mathf.RoundToInt(directionVector.y), Mathf.RoundToInt(directionVector.z));
                         Vector3Int checkBlock = new Vector3Int(x, y, z) + directionVectorInt;
-
-                        /*
-                         * Conditions for the face to be drawn
-                         * - It is bottom most or topmost block in the chunk
-                         * - The neighbouring block is transparent AND different type of block
-                         */
-                        if (checkBlock.y < 0 || checkBlock.y >= chunkSizeY ||
-                            (CheckBlockIsTransparent(checkBlock) && CheckIsNotSameBlock(BlocksData[x][y][z].BlockType, checkBlock)) || 
-                            (blockTypesProperties[BlocksData[x][y][z].BlockType].isFluid && CheckIsNotSameBlock(BlocksData[x][y][z].BlockType, checkBlock) 
-                                && pair.Key == Sides.UP))
+                        
+                        if (IsBlockSideDrawn(new Vector3Int(x,y,z), checkBlock, pair.Key))
                         {
                             BlockData curData = BlocksData[x][y][z];
                             int localX = x - startX;
@@ -269,13 +261,13 @@ public class RegionChunk : MonoBehaviour
                                             {
                                                 sideVertMainDirection = blockTypesProperties[vertCheckData.BlockType]
                                                     .GetSideVertices(
-                                                        ConvertGlobalSideToLocalSide(ReverseHorizontalSide(vertCheck.Key),
+                                                        ConvertGlobalSideToLocalSide(Side.ReverseHorizontalSide(vertCheck.Key),
                                                             vertCheckData.BlockDirection),
                                                         localRenderChunkPos + vertCheck.Value,
                                                         vertCheckData.BlockDirection, vertCheckData.Level);
                                                 sideVertSubDirection = blockTypesProperties[vertCheckData.BlockType]
                                                     .GetSideVertices(
-                                                        ConvertGlobalSideToLocalSide(ReverseHorizontalSide(vertCheck.Key),
+                                                        ConvertGlobalSideToLocalSide(Side.ReverseHorizontalSide(vertCheck.Key),
                                                             vertCheckData.SubDirection),
                                                         localRenderChunkPos + vertCheck.Value,
                                                         vertCheckData.SubDirection, vertCheckData.Level);
@@ -377,56 +369,37 @@ public class RegionChunk : MonoBehaviour
                                             {
                                                 sideVertMainDirection = blockTypesProperties[vertCheckData.BlockType]
                                                     .GetSideVertices(
-                                                        ConvertGlobalSideToLocalSide(ReverseHorizontalSide(adjustedVertCheck.Key), vertCheckData.BlockDirection),
+                                                        ConvertGlobalSideToLocalSide(Side.ReverseHorizontalSide(adjustedVertCheck.Key), vertCheckData.BlockDirection),
                                                         localRenderChunkPos + adjustedVertCheck.Value, //Adjust vertcheck value here later
                                                         vertCheckData.BlockDirection, vertCheckData.Level);
                                                 sideVertSubDirection = blockTypesProperties[vertCheckData.BlockType]
                                                     .GetSideVertices(
-                                                        ConvertGlobalSideToLocalSide(ReverseHorizontalSide(adjustedVertCheck.Key), vertCheckData.SubDirection),
+                                                        ConvertGlobalSideToLocalSide(Side.ReverseHorizontalSide(adjustedVertCheck.Key), vertCheckData.SubDirection),
                                                         localRenderChunkPos + adjustedVertCheck.Value,
                                                         vertCheckData.SubDirection, vertCheckData.Level);
                                             }
-
-                                            int offset = 0;
-                                            //Change this
-                                            // switch (curData.BlockDirection)
-                                            // {
-                                            //     case Sides.RIGHT:
-                                            //         offset = 1;
-                                            //         break;
-                                            //     case Sides.FRONT:
-                                            //         offset = 2;
-                                            //         break;
-                                            //     case Sides.LEFT:
-                                            //         offset = 3;
-                                            //         break;
-                                            // }
-                                            //Need to adjust this for sides, possibly change this switch to pair.Key
+                                            
                                             switch (vertCheck.Key)
                                             {
                                                 case Sides.RIGHT:
-                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertMainDirection[0].y);
-                                                    // res[(2 + offset) % 4].y = Mathf.Max(res[(2 + offset) % 4].y, sideVertMainDirection[3].y);
-                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertSubDirection[0].y);
-                                                    // res[(2 + offset) % 4].y = Mathf.Max(res[(2 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    res[0].y = Mathf.Max(res[0].y, sideVertMainDirection[0].y);
+                                                    res[0].y = Mathf.Max(res[0].y, sideVertSubDirection[0].y);
                                                     break;
                                                 case Sides.BACK:
-                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertMainDirection[3].y);
-                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertMainDirection[0].y);
-                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertSubDirection[3].y);
-                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    res[0].y = Mathf.Max(res[0].y, sideVertMainDirection[3].y);
+                                                    res[3].y = Mathf.Max(res[3].y, sideVertMainDirection[0].y);
+                                                    res[0].y = Mathf.Max(res[0].y, sideVertSubDirection[3].y);
+                                                    res[3].y = Mathf.Max(res[3].y, sideVertSubDirection[0].y);
                                                     break;
                                                 case Sides.LEFT:
-                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertMainDirection[3].y);
-                                                    // res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertMainDirection[3].y);
-                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertSubDirection[3].y);
-                                                    // res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    res[3].y = Mathf.Max(res[3].y, sideVertMainDirection[3].y);
+                                                    res[3].y = Mathf.Max(res[3].y, sideVertSubDirection[3].y);
                                                     break;
                                                 case Sides.UP:
-                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertMainDirection[3].y);
-                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertMainDirection[0].y);
-                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertSubDirection[3].y);
-                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    res[0].y = Mathf.Max(res[0].y, sideVertMainDirection[3].y);
+                                                    res[3].y = Mathf.Max(res[3].y, sideVertMainDirection[0].y);
+                                                    res[0].y = Mathf.Max(res[0].y, sideVertSubDirection[3].y);
+                                                    res[3].y = Mathf.Max(res[3].y, sideVertSubDirection[0].y);
                                                     break;
                                                 default:
                                                     print("error");
@@ -472,53 +445,24 @@ public class RegionChunk : MonoBehaviour
         _renderChunks[rChunkX][rChunkY][rChunkZ].BuildMesh(vertices.ToArray(), tris.ToArray(), uvs.ToArray());
     }
 
-    private Vector3[] CalculateUnevenVertices(BlockData data, KeyValuePair<Sides, Vector3Int> pair, int localX, int localY, int localZ)
+    /*
+     * Conditions for the face to be drawn
+     * - It is bottom most or topmost block in the chunk
+     * - The neighbouring block is transparent AND different type of block
+     *  - The block is a fluid and the block above is a different type of block
+     */
+    private bool IsBlockSideDrawn(Vector3Int blockPos, Vector3Int checkBlock, Sides checkSide)
     {
-        var vertMainDir = blockTypesProperties[data.BlockType]
-            .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ),
-                data.BlockDirection, data.Level);
-
-        // //Calculate the difference between the first direction and second direction
-        // int subDirSideInt;
-        // if ((int) data.BlockDirection > (int) data.SourceDirection)
-        // {
-        //     subDirSideInt = (((int) data.BlockDirection - 2 - ((int) data.SourceDirection - 2)) % 4 + (int) pair.Key) % 6;
-        //     if (subDirSideInt < 2)
-        //     {
-        //         subDirSideInt += 2;
-        //     }
-        // }
-        // else
-        // {
-        //     subDirSideInt = (((int) data.BlockDirection - 2 - ((int) data.SourceDirection - 2)) + (int) pair.Key) % 6;
-        //     if (subDirSideInt < 2)
-        //     {
-        //         subDirSideInt += 4;
-        //     }
-        // }
-
-        //Convert int to enum
-        // var subDirSide = (Sides) subDirSideInt;
-
-        var vertSubDir = blockTypesProperties[data.BlockType]
-            .GetSideVertices(pair.Key == Sides.UP ? pair.Key : Sides.UP, new Vector3(localX, localY, localZ),
-                data.SubDirection, data.Level);
-
-        //Both offset is -2 because Sides for int 0 and 1 is occupied by sides up and down (not relevant in this calculation)
-        int offset = Math.Abs((int) data.BlockDirection - 2 - (int) data.SubDirection - 2);
-
-        //Get the source water vertex height
-        Sides reverseSide = ReverseHorizontalSide(pair.Key);
-        var sourceVertices = blockTypesProperties[data.BlockType].GetSideVertices(reverseSide,
-            new Vector3(localX, localY, localZ), data.SubDirection, data.Level + 1);
-
-        var resultVertices = PartialMaxHeightVertex(
-            MaxHeightVertex(vertMainDir, vertSubDir, offset), sourceVertices,
-            pair.Key == Sides.UP ? offset : 0,
-            sidePartialMaxVertices[pair.Key]);
-        return resultVertices;
+        BlockData blockData = BlocksData[blockPos.x][blockPos.y][blockPos.z];
+        return checkBlock.y < 0 ||
+               checkBlock.y >= chunkSizeY ||
+               (CheckBlockIsTransparent(checkBlock) &&
+                CheckIsNotSameBlock(blockData.BlockType, checkBlock)) ||
+               (blockTypesProperties[blockData.BlockType].isFluid &&
+                CheckIsNotSameBlock(blockData.BlockType, checkBlock)
+                && checkSide == Sides.UP);
     }
-
+    
     private bool CheckIsNotSameBlock(BlockTypes currentBlockType, Vector3Int checkBlock)
     {
         //Also don't draw the face if it is both water
@@ -576,23 +520,6 @@ public class RegionChunk : MonoBehaviour
                 res[i] = vertices1[i];
         }
         return res;
-    }
-
-    private Sides ReverseHorizontalSide(Sides side)
-    {
-        switch (side)
-        {
-            case Sides.LEFT:
-                return Sides.RIGHT;
-            case Sides.RIGHT:
-                return Sides.LEFT;
-            case Sides.FRONT:
-                return Sides.BACK;
-            case Sides.BACK:
-                return Sides.FRONT;
-            default:
-                return side;
-        }
     }
 
     //Horizontal side only, still not working correctly

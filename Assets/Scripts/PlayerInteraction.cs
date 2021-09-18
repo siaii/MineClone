@@ -223,7 +223,7 @@ public class PlayerInteraction : MonoBehaviour
                             break;
                     }
                 }
-                collidedChunk._chunkUpdater.updateNextTick.Enqueue(newBlock);
+                collidedChunk._chunkUpdater.updateNextTick.Add(newBlock);
             }
             delayTimer = 0;
         }
