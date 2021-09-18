@@ -311,11 +311,10 @@ public class Water_Flowing : Water_Source
         bool change = base.BlockUpdate(regChunk, blockPos);
         RegionChunk originalChunk = regChunk;
         BlockData curBlockData = regChunk.BlocksData[blockPos.x + 1][blockPos.y][blockPos.z + 1];
-        List<Vector3Int> waterToUpdate = new List<Vector3Int>();
         Dictionary<Sides, Vector3Int> checkDict = 
             new Dictionary<Sides, Vector3Int>()
             {
-                {Sides.DOWN, new Vector3Int(0, -1, 0)},
+                {Sides.UP, new Vector3Int(0, 1, 0)},
                 {Sides.RIGHT, new Vector3Int(1, 0, 0)},
                 {Sides.FRONT, new Vector3Int(0, 0, -1)},
                 {Sides.LEFT, new Vector3Int(-1, 0, 0)},
@@ -371,7 +370,7 @@ public class Water_Flowing : Water_Source
             BlockData checkData = regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1];
             if (checkData.BlockType == BlockTypes.WATER_SOURCE || checkData.BlockType == BlockTypes.WATER_FLOWING)
             {
-                int level = checkData.BlockType == BlockTypes.WATER_SOURCE ? 5 : checkData.Level;
+                int level = checkData.BlockType == BlockTypes.WATER_SOURCE || checkData.BlockDirection == Sides.DOWN ? 5 : checkData.Level;
                 if (level > maxSurroundingLevel)
                 {
                     maxDirection = Side.ReverseHorizontalSide(pair.Key);

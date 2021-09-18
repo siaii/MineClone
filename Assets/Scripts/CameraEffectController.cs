@@ -19,6 +19,7 @@ public class CameraEffectController : MonoBehaviour
     {
         Vector3 worldPos = transform.parent.TransformPoint(transform.localPosition);
 
+        //TODO add tint when inside flowing water
         SetWaterTint(_terrainGen.BlockTypeFromPosition(worldPos)==BlockTypes.WATER_SOURCE);
     }
 

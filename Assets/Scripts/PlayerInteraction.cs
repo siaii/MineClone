@@ -128,9 +128,7 @@ public class PlayerInteraction : MonoBehaviour
                     prevFrameMouse1Down = true;
                     //Make sure the coordinate to get the block is the correct block, thus the -0.5f
                     adjustedHitCoord = hit.point + hit.normal * -0.5f;
-                    var worldBlockCoord = new Vector3Int(Mathf.RoundToInt(adjustedHitCoord.x), Mathf.RoundToInt(adjustedHitCoord.y),
-                        Mathf.RoundToInt(adjustedHitCoord.z));
-                    
+
                     //Local within chunk (0-15) block coordinate
                     blockCoord = WorldCoordToChunkBlockCoord(adjustedHitCoord);
 

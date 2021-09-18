@@ -118,7 +118,7 @@ public class Water_Source : Block
 
     private void NewFlowWater(RegionChunk regChunk, Vector3Int checkBlock, KeyValuePair<Sides, Vector3Int> pair, BlockData curBlockData)
     {
-        var curLevel = curBlockData.BlockType == BlockTypes.WATER_SOURCE ? 5 : curBlockData.Level;
+        var curLevel = curBlockData.BlockType == BlockTypes.WATER_SOURCE || curBlockData.BlockDirection == Sides.DOWN ? 5 : curBlockData.Level;
         if (curLevel > 1 || pair.Key == Sides.DOWN)
         {
             regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockType =
@@ -133,7 +133,7 @@ public class Water_Source : Block
             }  
             else
             {
-                regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = pair.Key == Sides.DOWN ? 4 : curLevel - 1;
+                regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level = curLevel - 1;
             }
         }
     }
