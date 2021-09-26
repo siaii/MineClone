@@ -4,10 +4,11 @@
 Material:
   serializedVersion: 6
   m_ObjectHideFlags: 0
-  m_PrefabParentObject: {fileID: 0}
-  m_PrefabInternal: {fileID: 0}
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
   m_Name: Skybox_Mat
-  m_Shader: {fileID: 106, guid: 0000000000000000f000000000000000, type: 0}
+  m_Shader: {fileID: -6465566751694194690, guid: 2d69de3ee3b19904a9a9d67480906201, type: 3}
   m_ShaderKeywords: _METALLIC_SETUP _SUNDISK_HIGH_QUALITY
   m_LightmapFlags: 4
   m_EnableInstancingVariants: 0
@@ -18,6 +19,10 @@ Material:
   m_SavedProperties:
     serializedVersion: 3
     m_TexEnvs:
+    - Texture2D_bdd403fad5fc44708bba523e44025441:
+        m_Texture: {fileID: 2800000, guid: b9726aa3f002eb847b21784ac30f2d7a, type: 3}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     - _BumpMap:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
@@ -58,32 +63,54 @@ Material:
         m_Texture: {fileID: 0}
         m_Scale: {x: 1, y: 1}
         m_Offset: {x: 0, y: 0}
+    - unity_Lightmaps:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_LightmapsInd:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
+    - unity_ShadowMasks:
+        m_Texture: {fileID: 0}
+        m_Scale: {x: 1, y: 1}
+        m_Offset: {x: 0, y: 0}
     m_Floats:
+    - Vector1_85837530394d4e8b87453b5612ff8241: 200
     - _AtmosphereThickness: 0.53
     - _BumpScale: 1
     - _Cutoff: 0.5
     - _DetailNormalMapScale: 1
     - _DstBlend: 0
+    - _EnableStar: 0
     - _Exposure: 1.25
     - _GlossMapScale: 1
     - _Glossiness: 0.5
     - _GlossyReflections: 1
     - _Metallic: 0
     - _Mode: 0
+    - _MoonSize: 0.2
     - _OcclusionStrength: 1
     - _Parallax: 0.02
     - _SmoothnessTextureChannel: 0
     - _SpecularHighlights: 1
     - _SrcBlend: 1
     - _SunDisk: 2
-    - _SunSize: 0.04
+    - _SunSize: 0.4
     - _SunSizeConvergence: 5
     - _UVSec: 0
     - _WorkflowMode: 1
     - _ZWrite: 1
     m_Colors:
+    - Color_3091e50c8ee44e9ba5efd1064cff9259: {r: 1, g: 0.97571623, b: 0.3443396, a: 0}
+    - Color_76681693cdd24b569c8f5b7d8763fb02: {r: 0.7735849, g: 0.7735849, b: 0.7735849, a: 0}
+    - Color_841ab9734cf24a18b40d04c534b4bfa9: {r: 0.27148893, g: 0.6893087, b: 0.91463864, a: 1}
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
     - _GroundColor: {r: 0.6392157, g: 0.6901961, b: 0.7411765, a: 1}
+    - _HorizonColor: {r: 0.6666667, g: 0.8980393, b: 0.92549026, a: 1}
+    - _SkyColor: {r: 0, g: 0.6901961, b: 0.92549026, a: 1}
     - _SkyTint: {r: 1, g: 1, b: 1, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
+    - _SunDirection: {r: 66.25639, g: 270, b: 270, a: 0}
+  m_BuildTextureStacks: []
