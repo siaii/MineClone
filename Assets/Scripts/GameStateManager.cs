@@ -8,7 +8,17 @@ public class GameStateManager : MonoBehaviour
 
     [SerializeField] private LightingManager _lightingManager;
     
+    //Game data
     [SerializeField][Range(0,maxTime)]private float TimeOfDay = 10000;
+
+    [SerializeField] private Gamemode gamemode = Gamemode.CREATIVE;
+
+    public Gamemode GameMode
+    {
+        get => gamemode;
+        private set => gamemode = value;
+    }
+    
     // Start is called before the first frame update
     void Start()
     {

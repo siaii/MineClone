@@ -22,6 +22,9 @@ public class PlayerController : MonoBehaviour
     private Vector3 _playerVelocity = Vector3.zero;
     private Vector3 _downVelocity = new Vector3(0,0,0);
 
+    private float smoothedValX = 0f;
+    private float smoothedValZ = 0f;
+
     private TerrainGen _terrainGen;
 
     private float rotationY = 0;
@@ -99,14 +102,25 @@ public class PlayerController : MonoBehaviour
         }
         else
         {
-            if (!(Mathf.Abs(_playerVelocity.x) < Mathf.Epsilon && Mathf.Abs(_playerVelocity.z) < Mathf.Epsilon))
+            if (!Mathf.Approximately(Mathf.Abs(_playerVelocity.x),0) || !Mathf.Approximately(Mathf.Abs(_playerVelocity.z), 0))
             {
                 //Smoothen the player stop when player opens inventory, not abrupt stop
-                _playerVelocity.x = _playerVelocity.x - Mathf.Sign(_playerVelocity.x) * 3 * moveSpeed * Time.deltaTime;
-                _playerVelocity.z = _playerVelocity.z - Mathf.Sign(_playerVelocity.z) * 3 * moveSpeed * Time.deltaTime;
-            
-                _playerVelocity.x = _playerVelocity.x > 0 ? Mathf.Clamp(_playerVelocity.x, 0f, moveSpeed) : Mathf.Clamp(_playerVelocity.x, -moveSpeed, 0f);
-                _playerVelocity.z = _playerVelocity.z > 0 ? Mathf.Clamp(_playerVelocity.z, 0f, moveSpeed) : Mathf.Clamp(_playerVelocity.z, -moveSpeed, 0f);
+                if(!Mathf.Approximately(Mathf.Abs(_playerVelocity.x),0))
+                {
+                    _playerVelocity.x = Mathf.SmoothDamp(_playerVelocity.x, 0f, ref smoothedValX, Mathf.Abs(_playerVelocity.x)/moveSpeed/3f);
+                }
+                else
+                {
+                    smoothedValX = 0f;
+                }
+                if(!Mathf.Approximately(Mathf.Abs(_playerVelocity.z), 0))
+                {
+                    _playerVelocity.z = Mathf.SmoothDamp(_playerVelocity.z, 0f, ref smoothedValZ, Mathf.Abs(_playerVelocity.z)/moveSpeed/3f);
+                }
+                else
+                {
+                    smoothedValZ = 0f;
+                }
             }
         }
         
