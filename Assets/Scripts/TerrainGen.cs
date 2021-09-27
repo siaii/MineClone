@@ -82,7 +82,7 @@ public class TerrainGen : MonoBehaviour
         {
             return;
         }
-        
+        //Get chunk coord to load
         for (var i = -renderDistance; i <= renderDistance; i++)
         for (var j = -renderDistance; j <= renderDistance; j++)
         {
@@ -92,7 +92,7 @@ public class TerrainGen : MonoBehaviour
         }
 
         List<Vector2Int> toDestroy = new List<Vector2Int>();
-        
+        //Get chunk coord to destroy
         foreach (var regionChunk in activeRegionChunks)
         {
             var chunkCoord = regionChunk.Key;
@@ -161,6 +161,7 @@ public class TerrainGen : MonoBehaviour
 
     IEnumerator ActivateOrCreateChunk(Vector2Int chunkCoord)
     {
+        //Get chunk to activate or change
         inLoadingChunk++;
         var curPlayerChunk = ChunkFromPosition(playerTransform.position);
         if (chunkCoord.x < curPlayerChunk.x - renderDistance || chunkCoord.x > curPlayerChunk.x + renderDistance ||
@@ -194,6 +195,7 @@ public class TerrainGen : MonoBehaviour
         {
             chunk.ClearRenderMesh();
         }
+        //Set chunk block data content
         for (int x = 0; x < RegionChunk.chunkSizeX + 2; x++)
         {
             for (int z = 0; z < RegionChunk.chunkSizeZ + 2; z++)
@@ -226,10 +228,6 @@ public class TerrainGen : MonoBehaviour
                 }
 
                 y++;
-                // for (; y == groundHeight; y++)
-                // {
-                //     chunk.BlocksData[x][y][z] = BlockTypes.GRASS;
-                // }
 
                 for (; y < waterLevel; y++)
                 {

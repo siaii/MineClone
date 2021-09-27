@@ -56,6 +56,7 @@ public class RegionChunk : MonoBehaviour
     private void Awake()
     {
         _texturePacker = FindObjectOfType<TexturePacker>();
+        //Initialize block data array
         for (int i = 0; i < chunkSizeX+2; i++)
         {
             BlocksData[i] = new BlockData[chunkSizeY][];
@@ -68,6 +69,7 @@ public class RegionChunk : MonoBehaviour
                 }
             }
         }
+        //Initialize render chunks array
         _renderChunks = new RenderChunk[chunkSizeX / RenderChunk.xSize][][];
         _waterChunks = new WaterChunk[chunkSizeX / WaterChunk.xSize][][];
         for (int i = 0; i < chunkSizeX / RenderChunk.xSize; i++)
@@ -118,13 +120,14 @@ public class RegionChunk : MonoBehaviour
                 {
                     if (_renderChunks[x][y][z] == null)
                     {
+                        //Instantiate new render chunks
                         GameObject renderChunkGO = Instantiate(renderChunkPrefab, this.transform);
                         RenderChunk renderChunkScript = renderChunkGO.GetComponent<RenderChunk>();
                         renderChunkGO.transform.localPosition = new Vector3(x * RenderChunk.xSize, y * RenderChunk.ySize,
                             z * RenderChunk.zSize);
                         _renderChunks[x][y][z] = renderChunkScript;
                     }
-
+                    //Instantiate new water chunks
                     if (_waterChunks[x][y][z] == null)
                     {
                         GameObject waterChunkGO = Instantiate(waterChunkPrefab, this.transform);
@@ -171,7 +174,7 @@ public class RegionChunk : MonoBehaviour
                     //Check all 6 direction if the face needs to be drawn
                     foreach (var pair in sideVector)
                     {
-                        //Account face check vector for the direction of the block
+                        //Rotate face check vector to account for the direction of the block
                         float rotationAmount = 0;
                         switch (BlocksData[x][y][z].BlockDirection)
                         {
@@ -193,9 +196,11 @@ public class RegionChunk : MonoBehaviour
                         {
                             directionVector = Quaternion.AngleAxis(rotationAmount, Vector3.up) * directionVector;
                         }
+                        //Actual block checked
                         Vector3Int directionVectorInt = new Vector3Int(Mathf.RoundToInt(directionVector.x), Mathf.RoundToInt(directionVector.y), Mathf.RoundToInt(directionVector.z));
                         Vector3Int checkBlock = new Vector3Int(x, y, z) + directionVectorInt;
                         
+                        //Returns true if the block face should be drawn
                         if (IsBlockSideDrawn(new Vector3Int(x,y,z), checkBlock, pair.Key))
                         {
                             BlockData curData = BlocksData[x][y][z];
@@ -203,17 +208,18 @@ public class RegionChunk : MonoBehaviour
                             int localY = y - startY;
                             int localZ = z - startZ;
                             int oldLength;
-                            //Different render chunk for water and solid
+                            //Different render chunk for water and solid blocks
                             if (BlockPropertyManager.blockProperties[curData.BlockType].isFluid)
                             {
                                 oldLength = waterVertices.Count;
-                                //If isLeveled (flowing water only for now)
+                                //If isLeveled (flowing water only for now), calculate vertices
                                 if (BlockPropertyManager.blockProperties[curData.BlockType].isLeveled)
                                 {
                                     var localRenderChunkPos = new Vector3(localX, localY, localZ);
                                     var mainVert = BlockPropertyManager.blockProperties[curData.BlockType]
                                         .GetSideVertices(pair.Key, localRenderChunkPos, curData.BlockDirection, curData.Level);
                                     Vector3[] res = (Vector3[]) mainVert.Clone();
+                                    
                                     if (pair.Key == Sides.UP)
                                     {
                                         Dictionary<Sides, Vector3Int> checkDict = new Dictionary<Sides, Vector3Int>()
@@ -223,13 +229,13 @@ public class RegionChunk : MonoBehaviour
                                             {Sides.LEFT, Vector3Int.left},
                                             {Sides.BACK, Vector3Int.forward}
                                         };
-
+                                        //Check surrounding water for water block to get connected vertex height
                                         foreach (var vertCheck in checkDict)
                                         {
                                             Vector3Int vertCheckBlock = new Vector3Int(x, y, z) + vertCheck.Value;
                                             BlockData vertCheckData =
                                                 BlocksData[vertCheckBlock.x][vertCheckBlock.y][vertCheckBlock.z];
-
+                                            //Initialize to -inf since looking for max
                                             Vector3[] sideVertMainDirection =
                                             {
                                                 Vector3.negativeInfinity, 
@@ -244,6 +250,8 @@ public class RegionChunk : MonoBehaviour
                                                 Vector3.negativeInfinity, 
                                                 Vector3.negativeInfinity, 
                                             };
+                                            
+                                            //Get the main dir and sub dir for the checked block
                                             if (vertCheckData.BlockType == BlockTypes.WATER_FLOWING && vertCheckData.Level>=curData.Level 
                                                 || vertCheckData.BlockType == BlockTypes.WATER_SOURCE)
                                             {
@@ -274,7 +282,7 @@ public class RegionChunk : MonoBehaviour
                                                     offset = 3;
                                                     break;
                                             }
-                                            
+                                            //Use the vertex with max height as the height of current vertex
                                             switch (vertCheck.Key)
                                             {
                                                 case Sides.RIGHT:
@@ -337,7 +345,7 @@ public class RegionChunk : MonoBehaviour
                                             Vector3Int vertCheckBlock = new Vector3Int(x, y, z) + adjustedVertCheck.Value;
                                             BlockData vertCheckData =
                                                 BlocksData[vertCheckBlock.x][vertCheckBlock.y][vertCheckBlock.z];
-
+                                            //Initialize to -inf since looking for max
                                             Vector3[] sideVertMainDirection =
                                             {
                                                 Vector3.negativeInfinity, 
@@ -352,6 +360,7 @@ public class RegionChunk : MonoBehaviour
                                                 Vector3.negativeInfinity, 
                                                 Vector3.negativeInfinity, 
                                             };
+                                            //Get the main dir and sub dir for the checked block
                                             if (vertCheckData.BlockType == BlockTypes.WATER_FLOWING && vertCheckData.Level>=curData.Level 
                                                 || vertCheckData.BlockType == BlockTypes.WATER_SOURCE)
                                             {
@@ -366,7 +375,7 @@ public class RegionChunk : MonoBehaviour
                                                         localRenderChunkPos + adjustedVertCheck.Value,
                                                         vertCheckData.SubDirection, vertCheckData.Level);
                                             }
-                                            
+                                            //Use the vertex with max height as the height of current vertex
                                             switch (vertCheck.Key)
                                             {
                                                 case Sides.RIGHT:
@@ -397,11 +406,13 @@ public class RegionChunk : MonoBehaviour
                                     }
                                     waterVertices.AddRange(res);
                                 }
+                                //Water source block, doesn't have variations
                                 else
                                 {
                                     waterVertices.AddRange(BlockPropertyManager.blockProperties[curData.BlockType]
                                         .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ)));
                                 }
+                                //Add corresponding uvs and tris
                                 waterUvs.AddRange(GetBlockSideUVs(curData.BlockType, pair.Key));
                                 var blockTris = BlockPropertyManager.blockProperties[curData.BlockType].GetSideTriangles(pair.Key);
                                 
@@ -412,10 +423,10 @@ public class RegionChunk : MonoBehaviour
                             }
                             else
                             {
+                                //Add corresponding block verts, uvs, and tris
                                 oldLength = vertices.Count;
                                 vertices.AddRange(BlockPropertyManager.blockProperties[curData.BlockType]
                                     .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ)));
-
                                 uvs.AddRange(GetBlockSideUVs(curData.BlockType, pair.Key, curData.BlockDirection));
                                 var blockTris = BlockPropertyManager.blockProperties[curData.BlockType].GetSideTriangles(pair.Key);
                                 foreach (var offset in blockTris)
@@ -491,21 +502,6 @@ public class RegionChunk : MonoBehaviour
         for (int i = 0; i < vertices1.Length; i++)
         {
             res[i] = new Vector3(vertices1[i].x, Mathf.Max(vertices1[i].y, vertices2[(i + offset) % 4].y), vertices1[i].z);
-        }
-        return res;
-    }
-
-    //Only get the max height for vertices with index contained in idx
-    private Vector3[] PartialMaxHeightVertex(Vector3[] vertices1, Vector3[] vertices2, int offset, int[] idx)
-    {
-        Vector3[] res = new Vector3[vertices1.Length];
-        for (int i = 0; i < vertices1.Length; i++)
-        {
-            if (idx.Contains(i))
-                res[i] = new Vector3(vertices1[i].x, Mathf.Max(vertices1[i].y, vertices2[(i + offset) % 4].y),
-                    vertices1[i].z);
-            else
-                res[i] = vertices1[i];
         }
         return res;
     }

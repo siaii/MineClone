@@ -24,6 +24,7 @@ public class LightingManager : MonoBehaviour
         RenderSettings.ambientLight = Preset.AmbientColor.Evaluate(timePercent);
         RenderSettings.fogColor = Preset.FogColor.Evaluate(timePercent);
 
+        //Set sun and moon color, intensity and rotation
         if (SunDirectionalLight != null && MoonDirectionalLight!=null && DirectionalParent!=null)
         {
             SunDirectionalLight.color = Preset.DirectionalColor.Evaluate(timePercent);
@@ -35,6 +36,7 @@ public class LightingManager : MonoBehaviour
             DirectionalParent.transform.rotation = Quaternion.Euler(new Vector3((timePercent * 360f) - 90f, -90f, -90f));
         }
         
+        //Set skybox properties
         if (SkyboxMat != null)
         {
             SkyboxMat.SetColor("_SkyColor", Preset.SkyColor.Evaluate(timePercent));

@@ -253,15 +253,7 @@ public class PlayerInventory : MonoBehaviour
         {
             if ((activeInventory[itemSlotIndex].itemContained != null) && (!Input.GetKey(KeyCode.LeftShift) || isCreative))
             {
-                _holdItem.itemContained = activeInventory[itemSlotIndex].itemContained;                    
-                // if (isCreative)
-                // {
-                //     _holdItem.itemContained = _creativeItemSlots[itemSlotIndex].itemContained;                    
-                // }
-                // else
-                // {
-                //     _holdItem.itemContained = _inventoryItems[itemSlotIndex].itemContained;    
-                // }
+                _holdItem.itemContained = activeInventory[itemSlotIndex].itemContained;
             }
 
             int resCount = -1;

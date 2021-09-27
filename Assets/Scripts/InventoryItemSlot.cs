@@ -59,11 +59,6 @@ public class InventoryItemSlot
 
     public virtual int PutItem(InventoryItem item, int count)
     {
-        // if (item != itemContained || itemCount >= maxItemCount)
-        // {
-        //     return -1;
-        // }
-
         if (itemContained == null)
         {
             itemContained = item;
