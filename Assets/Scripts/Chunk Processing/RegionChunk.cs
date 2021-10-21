@@ -109,7 +109,8 @@ public class RegionChunk : MonoBehaviour
             }
         }
     }
-
+    
+    //Probably will be deprecated if there is no performance issue
     public IEnumerator GenerateRenderChunks()
     {
         for (int x = 0; x < chunkSizeX / RenderChunk.xSize; x++)
@@ -149,6 +150,298 @@ public class RegionChunk : MonoBehaviour
                 }
             }
         }
+    }
+    
+    public void CalculateDrawnMeshInstant(int rChunkX,int rChunkY, int rChunkZ)
+    {
+        List<Vector3> vertices = new List<Vector3>();
+        List<int> tris = new List<int>();
+        List<Vector2> uvs = new List<Vector2>();
+
+        List<Vector3> waterVertices = new List<Vector3>();
+        List<int> waterTris = new List<int>();
+        List<Vector2> waterUvs = new List<Vector2>();
+        
+        int startX = rChunkX * RenderChunk.xSize + 1;
+        int startY = rChunkY * RenderChunk.ySize;
+        int startZ = rChunkZ * RenderChunk.zSize + 1;
+        
+        for (int x = startX; x < startX + RenderChunk.xSize; x++)
+        {
+            for (int y = startY; y < startY + RenderChunk.ySize; y++)
+            {
+                for (int z = startZ; z < startZ + RenderChunk.zSize; z++)
+                {
+                    //Check all 6 direction if the face needs to be drawn
+                    foreach (var pair in sideVector)
+                    {
+                        //Rotate face check vector to account for the direction of the block
+                        float rotationAmount = 0;
+                        switch (BlocksData[x][y][z].BlockDirection)
+                        {
+                            case Sides.BACK:
+                                rotationAmount = 0;
+                                break;
+                            case Sides.RIGHT:
+                                rotationAmount = 90;
+                                break;
+                            case Sides.FRONT:
+                                rotationAmount = 180;
+                                break;
+                            case Sides.LEFT:
+                                rotationAmount = 270;
+                                break;
+                        }
+                        Vector3 directionVector = pair.Value;
+                        if (BlockPropertyManager.blockProperties[BlocksData[x][y][z].BlockType].isDirectional)
+                        {
+                            directionVector = Quaternion.AngleAxis(rotationAmount, Vector3.up) * directionVector;
+                        }
+                        //Actual block checked
+                        Vector3Int directionVectorInt = new Vector3Int(Mathf.RoundToInt(directionVector.x), Mathf.RoundToInt(directionVector.y), Mathf.RoundToInt(directionVector.z));
+                        Vector3Int checkBlock = new Vector3Int(x, y, z) + directionVectorInt;
+                        
+                        //Returns true if the block face should be drawn
+                        if (IsBlockSideDrawn(new Vector3Int(x,y,z), checkBlock, pair.Key))
+                        {
+                            BlockData curData = BlocksData[x][y][z];
+                            int localX = x - startX;
+                            int localY = y - startY;
+                            int localZ = z - startZ;
+                            int oldLength;
+                            //Different render chunk for water and solid blocks
+                            if (BlockPropertyManager.blockProperties[curData.BlockType].isFluid)
+                            {
+                                oldLength = waterVertices.Count;
+                                //If isLeveled (flowing water only for now), calculate vertices
+                                if (BlockPropertyManager.blockProperties[curData.BlockType].isLeveled)
+                                {
+                                    var localRenderChunkPos = new Vector3(localX, localY, localZ);
+                                    var mainVert = BlockPropertyManager.blockProperties[curData.BlockType]
+                                        .GetSideVertices(pair.Key, localRenderChunkPos, curData.BlockDirection, curData.Level);
+                                    Vector3[] res = (Vector3[]) mainVert.Clone();
+                                    
+                                    if (pair.Key == Sides.UP)
+                                    {
+                                        Dictionary<Sides, Vector3Int> checkDict = new Dictionary<Sides, Vector3Int>()
+                                        {
+                                            {Sides.RIGHT, Vector3Int.right},
+                                            {Sides.FRONT, Vector3Int.back},
+                                            {Sides.LEFT, Vector3Int.left},
+                                            {Sides.BACK, Vector3Int.forward}
+                                        };
+                                        //Check surrounding water for water block to get connected vertex height
+                                        foreach (var vertCheck in checkDict)
+                                        {
+                                            Vector3Int vertCheckBlock = new Vector3Int(x, y, z) + vertCheck.Value;
+                                            BlockData vertCheckData =
+                                                BlocksData[vertCheckBlock.x][vertCheckBlock.y][vertCheckBlock.z];
+                                            //Initialize to -inf since looking for max
+                                            Vector3[] sideVertMainDirection =
+                                            {
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                            };
+                                            Vector3[] sideVertSubDirection =
+                                            {
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                            };
+                                            
+                                            //Get the main dir and sub dir for the checked block
+                                            if (vertCheckData.BlockType == BlockTypes.WATER_FLOWING && vertCheckData.Level>=curData.Level 
+                                                || vertCheckData.BlockType == BlockTypes.WATER_SOURCE)
+                                            {
+                                                sideVertMainDirection = BlockPropertyManager.blockProperties[vertCheckData.BlockType]
+                                                    .GetSideVertices(
+                                                        ConvertGlobalSideToLocalSide(Side.ReverseHorizontalSide(vertCheck.Key),
+                                                            vertCheckData.BlockDirection),
+                                                        localRenderChunkPos + vertCheck.Value,
+                                                        vertCheckData.BlockDirection, vertCheckData.Level);
+                                                sideVertSubDirection = BlockPropertyManager.blockProperties[vertCheckData.BlockType]
+                                                    .GetSideVertices(
+                                                        ConvertGlobalSideToLocalSide(Side.ReverseHorizontalSide(vertCheck.Key),
+                                                            vertCheckData.SubDirection),
+                                                        localRenderChunkPos + vertCheck.Value,
+                                                        vertCheckData.SubDirection, vertCheckData.Level);
+                                            }
+
+                                            int offset = 0;
+                                            switch (curData.BlockDirection)
+                                            {
+                                                case Sides.RIGHT:
+                                                    offset = 1;
+                                                    break;
+                                                case Sides.FRONT:
+                                                    offset = 2;
+                                                    break;
+                                                case Sides.LEFT:
+                                                    offset = 3;
+                                                    break;
+                                            }
+                                            //Use the vertex with max height as the height of current vertex
+                                            switch (vertCheck.Key)
+                                            {
+                                                case Sides.RIGHT:
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertMainDirection[0].y);
+                                                    res[(2 + offset) % 4].y = Mathf.Max(res[(2 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    res[(2 + offset) % 4].y = Mathf.Max(res[(2 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    break;
+                                                case Sides.FRONT:
+                                                    res[(2 + offset) % 4].y = Mathf.Max(res[(2 + offset) % 4].y, sideVertMainDirection[0].y);
+                                                    res[(1 + offset) % 4].y = Mathf.Max(res[(1 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    res[(2 + offset) % 4].y = Mathf.Max(res[(2 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    res[(1 + offset) % 4].y = Mathf.Max(res[(1 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    break;
+                                                case Sides.LEFT:
+                                                    res[(1 + offset) % 4].y = Mathf.Max(res[(1 + offset) % 4].y, sideVertMainDirection[0].y);
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    res[(1 + offset) % 4].y = Mathf.Max(res[(1 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    break;
+                                                case Sides.BACK:
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertMainDirection[0].y);
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertMainDirection[3].y);
+                                                    res[(0 + offset) % 4].y = Mathf.Max(res[(0 + offset) % 4].y, sideVertSubDirection[0].y);
+                                                    res[(3 + offset) % 4].y = Mathf.Max(res[(3 + offset) % 4].y, sideVertSubDirection[3].y);
+                                                    break;
+                                                default:
+                                                    print("error");
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                    else if(pair.Key == Sides.DOWN)
+                                    {
+                                        //Do nothing
+                                    }
+                                    else
+                                    {
+                                        Dictionary<Sides, Vector3Int> checkDict = new Dictionary<Sides, Vector3Int>()
+                                        {
+                                            {Sides.UP, Vector3Int.up},
+                                            {Sides.RIGHT, Vector3Int.right},
+                                            {Sides.BACK, Vector3Int.forward},
+                                            {Sides.LEFT, Vector3Int.left},
+                                        };
+
+                                        foreach (var vertCheck in checkDict)
+                                        {
+                                            //Rotate the vertCheck
+                                            var adjustedVertCheck =
+                                                new KeyValuePair<Sides, Vector3Int>(
+                                                    ConvertLocalToGlobalSide( //rename this
+                                                        vertCheck.Key,
+                                                        ConvertLocalToGlobalSide(pair.Key, curData.BlockDirection)),
+                                                    sideVector[
+                                                        ConvertLocalToGlobalSide(
+                                                            vertCheck.Key,
+                                                            ConvertLocalToGlobalSide(pair.Key, curData.BlockDirection))]);
+                                            
+                                            Vector3Int vertCheckBlock = new Vector3Int(x, y, z) + adjustedVertCheck.Value;
+                                            BlockData vertCheckData =
+                                                BlocksData[vertCheckBlock.x][vertCheckBlock.y][vertCheckBlock.z];
+                                            //Initialize to -inf since looking for max
+                                            Vector3[] sideVertMainDirection =
+                                            {
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                            };
+                                            Vector3[] sideVertSubDirection =
+                                            {
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                                Vector3.negativeInfinity, 
+                                            };
+                                            //Get the main dir and sub dir for the checked block
+                                            if (vertCheckData.BlockType == BlockTypes.WATER_FLOWING && vertCheckData.Level>=curData.Level 
+                                                || vertCheckData.BlockType == BlockTypes.WATER_SOURCE)
+                                            {
+                                                sideVertMainDirection = BlockPropertyManager.blockProperties[vertCheckData.BlockType]
+                                                    .GetSideVertices(
+                                                        ConvertGlobalSideToLocalSide(Side.ReverseHorizontalSide(adjustedVertCheck.Key), vertCheckData.BlockDirection),
+                                                        localRenderChunkPos + adjustedVertCheck.Value, //Adjust vertcheck value here later
+                                                        vertCheckData.BlockDirection, vertCheckData.Level);
+                                                sideVertSubDirection = BlockPropertyManager.blockProperties[vertCheckData.BlockType]
+                                                    .GetSideVertices(
+                                                        ConvertGlobalSideToLocalSide(Side.ReverseHorizontalSide(adjustedVertCheck.Key), vertCheckData.SubDirection),
+                                                        localRenderChunkPos + adjustedVertCheck.Value,
+                                                        vertCheckData.SubDirection, vertCheckData.Level);
+                                            }
+                                            //Use the vertex with max height as the height of current vertex
+                                            switch (vertCheck.Key)
+                                            {
+                                                case Sides.RIGHT:
+                                                    res[0].y = Mathf.Max(res[0].y, sideVertMainDirection[0].y);
+                                                    res[0].y = Mathf.Max(res[0].y, sideVertSubDirection[0].y);
+                                                    break;
+                                                case Sides.BACK:
+                                                    res[0].y = Mathf.Max(res[0].y, sideVertMainDirection[3].y);
+                                                    res[3].y = Mathf.Max(res[3].y, sideVertMainDirection[0].y);
+                                                    res[0].y = Mathf.Max(res[0].y, sideVertSubDirection[3].y);
+                                                    res[3].y = Mathf.Max(res[3].y, sideVertSubDirection[0].y);
+                                                    break;
+                                                case Sides.LEFT:
+                                                    res[3].y = Mathf.Max(res[3].y, sideVertMainDirection[3].y);
+                                                    res[3].y = Mathf.Max(res[3].y, sideVertSubDirection[3].y);
+                                                    break;
+                                                case Sides.UP:
+                                                    res[0].y = Mathf.Max(res[0].y, sideVertMainDirection[3].y);
+                                                    res[3].y = Mathf.Max(res[3].y, sideVertMainDirection[0].y);
+                                                    res[0].y = Mathf.Max(res[0].y, sideVertSubDirection[3].y);
+                                                    res[3].y = Mathf.Max(res[3].y, sideVertSubDirection[0].y);
+                                                    break;
+                                                default:
+                                                    print("error");
+                                                    break;
+                                            }
+                                        }
+                                    }
+                                    waterVertices.AddRange(res);
+                                }
+                                //Water source block, doesn't have variations
+                                else
+                                {
+                                    waterVertices.AddRange(BlockPropertyManager.blockProperties[curData.BlockType]
+                                        .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ)));
+                                }
+                                //Add corresponding uvs and tris
+                                waterUvs.AddRange(GetBlockSideUVs(curData.BlockType, pair.Key));
+                                var blockTris = BlockPropertyManager.blockProperties[curData.BlockType].GetSideTriangles(pair.Key);
+                                
+                                foreach (var offset in blockTris)
+                                {
+                                    waterTris.Add(oldLength+offset);
+                                }    
+                            }
+                            else
+                            {
+                                //Add corresponding block verts, uvs, and tris
+                                oldLength = vertices.Count;
+                                vertices.AddRange(BlockPropertyManager.blockProperties[curData.BlockType]
+                                    .GetSideVertices(pair.Key, new Vector3(localX, localY, localZ)));
+                                uvs.AddRange(GetBlockSideUVs(curData.BlockType, pair.Key, curData.BlockDirection));
+                                var blockTris = BlockPropertyManager.blockProperties[curData.BlockType].GetSideTriangles(pair.Key);
+                                foreach (var offset in blockTris)
+                                {
+                                    tris.Add(oldLength + offset);
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        _waterChunks[rChunkX][rChunkY][rChunkZ].BuildMesh(waterVertices.ToArray(), waterTris.ToArray(), waterUvs.ToArray());
+        _renderChunks[rChunkX][rChunkY][rChunkZ].BuildMesh(vertices.ToArray(), tris.ToArray(), uvs.ToArray());
     }
     
     public IEnumerator CalculateDrawnMesh(int rChunkX,int rChunkY, int rChunkZ)

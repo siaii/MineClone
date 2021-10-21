@@ -145,7 +145,7 @@ public class PlayerInteraction : MonoBehaviour
                         destroyHoldTimer += Time.deltaTime;
                     }
 
-                    if (destroyHoldTimer > destroyTime)
+                    if (destroyHoldTimer >= destroyTime)
                     {
                         //Possibly keep the record of modified blocks in TerrainGen
                         collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType = BlockTypes.AIR;
@@ -202,73 +202,90 @@ public class PlayerInteraction : MonoBehaviour
         
         if (blockChange)
         {
-            //Calculate new mesh
-            StartCoroutine(collidedChunk.CalculateDrawnMesh(blockCoord.x / RenderChunk.xSize,
-                blockCoord.y / RenderChunk.ySize, blockCoord.z / RenderChunk.zSize));
-
-            if (BlockPropertyManager.blockProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]
-                    .BlockType].isTransparent)
-            {
-                //Rerender the neighbouring render chunks
-                switch (blockCoord.y % RenderChunk.ySize)
-                {
-                    case (0):
-                        if (blockCoord.y / RenderChunk.ySize > 0)
-                            StartCoroutine(collidedChunk.CalculateDrawnMesh(blockCoord.x / RenderChunk.xSize,
-                                blockCoord.y / RenderChunk.ySize - 1, blockCoord.z / RenderChunk.zSize));
-                        break;
-                    case (RenderChunk.ySize - 1):
-                        if (blockCoord.y / RenderChunk.ySize < RegionChunk.chunkSizeY / RenderChunk.ySize - 1)
-                            StartCoroutine(collidedChunk.CalculateDrawnMesh(blockCoord.x / RenderChunk.xSize,
-                                blockCoord.y / RenderChunk.ySize + 1, blockCoord.z / RenderChunk.zSize));
-                        break;
-                }
-
-                //Update the render chunk of different region chunk
-                _terrainGen.UpdateBorderingChunkData(collidedChunk, blockCoord, collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]);
-            }
-
-            //Queue block update at all bordering blocks
-            var originalChunk = collidedChunk;
-            foreach (var pair in sideVector)
-            {
-                collidedChunk = originalChunk;
-                var newBlock = blockCoord + pair.Value;
-                //If the block to add is not in the current chunk
-                if (newBlock.x < 0 || newBlock.x + 1 > RegionChunk.chunkSizeX || newBlock.z < 0 ||
-                    newBlock.z + 1 > RegionChunk.chunkSizeZ)
-                {
-                    TerrainGen _terrainGen = TerrainGen.instance;
-                    var newChunkID = collidedChunk.chunkPos;
-                    newChunkID.x += pair.Value.x;
-                    newChunkID.y += pair.Value.z;
-
-                    collidedChunk = _terrainGen.GetRegionChunk(newChunkID);
-                    switch (pair.Key)
-                    {
-                        case Sides.RIGHT:
-                            newBlock.x = 0;
-                            break;
-                        case Sides.FRONT:
-                            newBlock.z = 15;
-                            break;
-                        case Sides.LEFT:
-                            newBlock.x = 15;
-                            break;
-                        case Sides.BACK:
-                            newBlock.z = 0;
-                            break;
-                        default:
-                            newBlock.x = 0;
-                            newBlock.z = 0;
-                            Debug.LogError("Water update chunk border error");
-                            break;
-                    }
-                }
-                collidedChunk._chunkUpdater.updateNextTick.Add(newBlock);
-            }
-            delayTimer = 0;
+            UpdateBlockMesh(collidedChunk, blockCoord);
         }
+    }
+
+    private void UpdateBlockMesh(RegionChunk collidedChunk, Vector3Int blockCoord, bool instantDraw = true)
+    {
+        //Calculate new mesh
+        if (instantDraw)
+        {
+            collidedChunk.CalculateDrawnMeshInstant(blockCoord.x / RenderChunk.xSize,
+                blockCoord.y / RenderChunk.ySize, blockCoord.z / RenderChunk.zSize);
+        }
+        else
+        {
+            StartCoroutine(collidedChunk.CalculateDrawnMesh(blockCoord.x / RenderChunk.xSize,
+                blockCoord.y / RenderChunk.ySize, blockCoord.z / RenderChunk.zSize));            
+        }
+
+
+        if (BlockPropertyManager.blockProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]
+            .BlockType].isTransparent)
+        {
+            //Rerender the neighbouring render chunks
+            switch (blockCoord.y % RenderChunk.ySize)
+            {
+                case (0):
+                    if (blockCoord.y / RenderChunk.ySize > 0)
+                        StartCoroutine(collidedChunk.CalculateDrawnMesh(blockCoord.x / RenderChunk.xSize,
+                            blockCoord.y / RenderChunk.ySize - 1, blockCoord.z / RenderChunk.zSize));
+                    break;
+                case (RenderChunk.ySize - 1):
+                    if (blockCoord.y / RenderChunk.ySize < RegionChunk.chunkSizeY / RenderChunk.ySize - 1)
+                        StartCoroutine(collidedChunk.CalculateDrawnMesh(blockCoord.x / RenderChunk.xSize,
+                            blockCoord.y / RenderChunk.ySize + 1, blockCoord.z / RenderChunk.zSize));
+                    break;
+            }
+
+            //Update the render chunk of different region chunk
+            _terrainGen.UpdateBorderingChunkData(collidedChunk, blockCoord,
+                collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]);
+        }
+
+        //Queue block update at all bordering blocks
+        var originalChunk = collidedChunk;
+        foreach (var pair in sideVector)
+        {
+            collidedChunk = originalChunk;
+            var newBlock = blockCoord + pair.Value;
+            //If the block to add is not in the current chunk
+            if (newBlock.x < 0 || newBlock.x + 1 > RegionChunk.chunkSizeX || newBlock.z < 0 ||
+                newBlock.z + 1 > RegionChunk.chunkSizeZ)
+            {
+                TerrainGen _terrainGen = TerrainGen.instance;
+                var newChunkID = collidedChunk.chunkPos;
+                newChunkID.x += pair.Value.x;
+                newChunkID.y += pair.Value.z;
+
+                collidedChunk = _terrainGen.GetRegionChunk(newChunkID);
+                switch (pair.Key)
+                {
+                    case Sides.RIGHT:
+                        newBlock.x = 0;
+                        break;
+                    case Sides.FRONT:
+                        newBlock.z = 15;
+                        break;
+                    case Sides.LEFT:
+                        newBlock.x = 15;
+                        break;
+                    case Sides.BACK:
+                        newBlock.z = 0;
+                        break;
+                    default:
+                        newBlock.x = 0;
+                        newBlock.z = 0;
+                        Debug.LogError("Water update chunk border error");
+                        break;
+                }
+            }
+
+            collidedChunk._chunkUpdater.updateNextTick.Add(newBlock);
+        }
+
+        delayTimer = 0;
     }
 
     Vector3Int WorldCoordToChunkBlockCoord(Vector3 worldCoord)
