@@ -15,22 +15,21 @@ public class TexturePacker : MonoBehaviour
 
     void Awake()
     {
-        packTextures();
-        generateTextureDictIdx();
+        
     }
 
     void Update()
     {
     }
 
-    public void packTextures()
+    public void packTextures(BlockPropertyPair[] textureDict)
     {
         Texture2D resTexture = new Texture2D(1024,1024);
         List<Texture2D> texturesToPack = new List<Texture2D>();
 
         foreach (var t in textureDict)
         {
-            texturesToPack.Add(t.blockTexture);
+            texturesToPack.Add(t.BlockProperty.BlockTexture);
         }
         blockTextureRects = resTexture.PackTextures(texturesToPack.ToArray(), 2);
         resTexture.filterMode = FilterMode.Point;
@@ -39,13 +38,13 @@ public class TexturePacker : MonoBehaviour
         ResultTextureAtlas = resTexture;
     }
 
-    void generateTextureDictIdx()
+    public void generateTextureDictIdx(BlockPropertyPair[] textureDict)
     {
         textureDictIndex = new Dictionary<BlockTypes, int>();
 
         for (int i = 0; i < textureDict.Length; i++)
         {
-            textureDictIndex.Add(textureDict[i].blockType, i);
+            textureDictIndex.Add(textureDict[i].BlockType, i);
         }
     } 
 }

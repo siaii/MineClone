@@ -13,9 +13,12 @@ public class ChunkUpdater : MonoBehaviour
     
     
     private float tickTimer = 0;
+
+    private BlockPropertyManager _blockPropertyManager;
     // Start is called before the first frame update
     void Start()
     {
+        _blockPropertyManager = BlockPropertyManager.Instance;
     }
 
     // Update is called once per frame
@@ -39,7 +42,7 @@ public class ChunkUpdater : MonoBehaviour
         foreach (var processCoord in updateCurrentTick)
         {
             var blockData = _regionChunk.BlocksData[processCoord.x + 1][processCoord.y][processCoord.z + 1];
-            if (BlockPropertyManager.blockProperties[blockData.BlockType].BlockUpdate(_regionChunk, processCoord))
+            if (_blockPropertyManager.blockClass[blockData.BlockType].BlockUpdate(_regionChunk, processCoord))
             {
                 blockChanged = true;
             }

@@ -9,6 +9,7 @@ public class PlayerInteraction : MonoBehaviour
     
     private TerrainGen _terrainGen;
     private PlayerInventory _playerInventory;
+    private BlockPropertyManager _blockPropertyManager;
 
     private Vector3Int prevLookedBlock;
     private GameObject blockHighlight;
@@ -41,6 +42,7 @@ public class PlayerInteraction : MonoBehaviour
     {
         _terrainGen = FindObjectOfType<TerrainGen>();
         _playerInventory = FindObjectOfType<PlayerInventory>();
+        _blockPropertyManager = BlockPropertyManager.Instance;
         _mainCamera = Camera.main;
         Cursor.lockState = CursorLockMode.Locked;
         Cursor.visible = false;
@@ -132,14 +134,14 @@ public class PlayerInteraction : MonoBehaviour
                     //Local within chunk (0-15) block coordinate
                     blockCoord = WorldCoordToChunkBlockCoord(adjustedHitCoord);
 
-                    float destroyTime = BlockPropertyManager
-                        .blockProperties[
+                    float destroyTime = _blockPropertyManager
+                        .blockClass[
                             collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType]
                         .destroyTime;
 
                     //Only count the timer if the block is destroyable
-                    if (BlockPropertyManager
-                        .blockProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType]
+                    if (_blockPropertyManager
+                        .blockClass[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1].BlockType]
                         .isDestroyable)
                     {
                         destroyHoldTimer += Time.deltaTime;
@@ -221,7 +223,7 @@ public class PlayerInteraction : MonoBehaviour
         }
 
 
-        if (BlockPropertyManager.blockProperties[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]
+        if (_blockPropertyManager.blockClass[collidedChunk.BlocksData[blockCoord.x + 1][blockCoord.y][blockCoord.z + 1]
             .BlockType].isTransparent)
         {
             //Rerender the neighbouring render chunks

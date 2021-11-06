@@ -3,15 +3,53 @@ using UnityEngine;
 
 public abstract class Block
 {
-    public virtual bool isTransparent => false;
-    public virtual bool isDirectional => false;
-    public virtual bool isLeveled => false;
+    public virtual bool isTransparent
+    {
+        get => false;
+        set => isTransparent = value;
+    }
 
-    public virtual bool isFluid => false;
+    public virtual bool isDirectional
+    {
+        get => false;
+        set => isDirectional = value;
+    }
 
-    public virtual bool isDestroyable => true;
+    public virtual bool isLeveled
+    {
+        get
+        {
+            return false;
+        }
+        set => isLeveled = value;
+    }
 
-    public virtual float destroyTime => 0.5f; //Seconds
+    public virtual bool isFluid
+    {
+        get
+        {
+            return false;
+        }
+        set => isFluid = value;
+    }
+
+    public virtual bool isDestroyable
+    {
+        get
+        {
+            return true;
+        }
+        set => isDestroyable = value;
+    }
+
+    public virtual float destroyTime
+    {
+        get
+        {
+            return 0.5f;
+        }
+        set => destroyTime = value;
+    }
 
     protected readonly Dictionary<Sides, Vector3[]> _verticesBase = new Dictionary<Sides, Vector3[]>()
     {

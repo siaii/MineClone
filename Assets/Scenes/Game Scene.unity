@@ -134,6 +134,8 @@ GameObject:
   - component: {fileID: 64181628}
   - component: {fileID: 64181627}
   - component: {fileID: 64181629}
+  - component: {fileID: 64181630}
+  - component: {fileID: 64181631}
   m_Layer: 0
   m_Name: GameManager
   m_TagString: Untagged
@@ -186,6 +188,68 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   _lightingManager: {fileID: 64181627}
   TimeOfDay: 10000
+  gamemode: 0
+--- !u!114 &64181630
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64181626}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: a8239eeef719d0749bb7b67f1c92c48d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  blockTextureRects: []
+  textureDict:
+  - blockType: 2
+    blockTexture: {fileID: 2800000, guid: 8c56b74943acbb248aea52b7f2babcc6, type: 3}
+  - blockType: 3
+    blockTexture: {fileID: 2800000, guid: dcee5d69283390d43a656636fd3140f4, type: 3}
+  - blockType: 4
+    blockTexture: {fileID: 2800000, guid: 8d62a7ddc484ac842a58a194da5aeffd, type: 3}
+  - blockType: 1
+    blockTexture: {fileID: 0}
+  - blockType: 5
+    blockTexture: {fileID: 2800000, guid: e2bccd4b06aa7304eae62ae02eeb3b02, type: 3}
+  - blockType: 6
+    blockTexture: {fileID: 2800000, guid: 6dfcaa6b2eb72e2418399cf668cfa544, type: 3}
+  - blockType: 7
+    blockTexture: {fileID: 2800000, guid: 85126e9d962485948828cb0464cceb98, type: 3}
+  - blockType: 8
+    blockTexture: {fileID: 2800000, guid: 85126e9d962485948828cb0464cceb98, type: 3}
+  renderChunkMaterial: {fileID: 2100000, guid: 27a16d40395637b40bcaa5e2ff73afda, type: 2}
+--- !u!114 &64181631
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 64181626}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 74d0e36fa77a50e4fb942ad014e8cfc1, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: 
+  blockProperty:
+  - BlockType: 1
+    BlockProperty: {fileID: 11400000, guid: bff22b70dd494a4428181a6a3fa72cbf, type: 2}
+  - BlockType: 2
+    BlockProperty: {fileID: 11400000, guid: 2871e19c72d5b54429addd3f4f583e37, type: 2}
+  - BlockType: 3
+    BlockProperty: {fileID: 11400000, guid: 9f8ead8a818e7ef4c8045bb314d89cca, type: 2}
+  - BlockType: 4
+    BlockProperty: {fileID: 11400000, guid: a84560b44995fdf42a1e2b9aec795daa, type: 2}
+  - BlockType: 5
+    BlockProperty: {fileID: 11400000, guid: 3c8ef681c0bd2764f9bd46bf4449aacf, type: 2}
+  - BlockType: 6
+    BlockProperty: {fileID: 11400000, guid: 0f423198ff2160c4fbe9e00d02584b0a, type: 2}
+  - BlockType: 7
+    BlockProperty: {fileID: 11400000, guid: 45df44fed42aaf1458605e7905d9eeb9, type: 2}
+  - BlockType: 8
+    BlockProperty: {fileID: 11400000, guid: a68b510e4824c6843ae69324fb6b7cbf, type: 2}
+  _texturePacker: {fileID: 64181630}
 --- !u!1 &329689268
 GameObject:
   m_ObjectHideFlags: 0
@@ -342,7 +406,7 @@ GameObject:
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
-  m_IsActive: 1
+  m_IsActive: 0
 --- !u!114 &653260036
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -369,7 +433,7 @@ MeshCollider:
   m_GameObject: {fileID: 653260035}
   m_Material: {fileID: 0}
   m_IsTrigger: 0
-  m_Enabled: 1
+  m_Enabled: 0
   serializedVersion: 4
   m_Convex: 1
   m_CookingOptions: 30
@@ -464,7 +528,6 @@ GameObject:
   m_Component:
   - component: {fileID: 1976626768}
   - component: {fileID: 1976626767}
-  - component: {fileID: 1976626769}
   m_Layer: 0
   m_Name: Terrain Generator
   m_TagString: Untagged
@@ -514,37 +577,6 @@ Transform:
   m_Father: {fileID: 0}
   m_RootOrder: 2
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
---- !u!114 &1976626769
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1976626766}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: a8239eeef719d0749bb7b67f1c92c48d, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
-  blockTextureRects: []
-  textureDict:
-  - blockType: 2
-    blockTexture: {fileID: 2800000, guid: 8c56b74943acbb248aea52b7f2babcc6, type: 3}
-  - blockType: 3
-    blockTexture: {fileID: 2800000, guid: dcee5d69283390d43a656636fd3140f4, type: 3}
-  - blockType: 4
-    blockTexture: {fileID: 2800000, guid: 8d62a7ddc484ac842a58a194da5aeffd, type: 3}
-  - blockType: 1
-    blockTexture: {fileID: 0}
-  - blockType: 5
-    blockTexture: {fileID: 2800000, guid: e2bccd4b06aa7304eae62ae02eeb3b02, type: 3}
-  - blockType: 6
-    blockTexture: {fileID: 2800000, guid: 6dfcaa6b2eb72e2418399cf668cfa544, type: 3}
-  - blockType: 7
-    blockTexture: {fileID: 2800000, guid: 85126e9d962485948828cb0464cceb98, type: 3}
-  - blockType: 8
-    blockTexture: {fileID: 2800000, guid: 85126e9d962485948828cb0464cceb98, type: 3}
-  renderChunkMaterial: {fileID: 2100000, guid: 27a16d40395637b40bcaa5e2ff73afda, type: 2}
 --- !u!1 &2138677391
 GameObject:
   m_ObjectHideFlags: 0
