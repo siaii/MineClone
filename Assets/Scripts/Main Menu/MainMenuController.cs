@@ -4,6 +4,9 @@ using UnityEngine;
 
 public class MainMenuController : MonoBehaviour
 {
+    [SerializeField] private GameObject MainMenuCanvas;
+    [SerializeField] private GameObject CreateWorldCanvas;
+    
     // Start is called before the first frame update
     void Start()
     {
@@ -14,5 +17,16 @@ public class MainMenuController : MonoBehaviour
     void Update()
     {
         
+    }
+
+    public void CreateWorld()
+    {
+        MainMenuCanvas.SetActive(false);
+        CreateWorldCanvas.SetActive(true);
+    }
+
+    public void ExitGame()
+    {
+        Application.Quit();
     }
 }
