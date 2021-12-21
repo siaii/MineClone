@@ -417,7 +417,21 @@ public class Water_Flowing : Water_Source
         //else
         if (curBlockData.Level - 1 == regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level)
         {
-            regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key;
+            if (regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].BlockDirection != pair.Key)
+            {
+                if (regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection ==
+                    Side.ReverseHorizontalSide(pair.Key))
+                {
+                    regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection =
+                        Side.ReverseHorizontalSide(regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1]
+                            .BlockDirection);
+                }
+                else
+                {
+                    regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].SubDirection = pair.Key;
+                }
+            }
+                
         }
         else if (curBlockData.Level - 1 > regChunk.BlocksData[checkBlock.x + 1][checkBlock.y][checkBlock.z + 1].Level)
         {
