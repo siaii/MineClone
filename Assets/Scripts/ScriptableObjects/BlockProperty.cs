@@ -10,11 +10,12 @@ public class BlockProperty : ScriptableObject
     public Texture2D BlockTexture;
 
     [Header("Fields")] 
+    public string blockName;
     public bool isTransparent;
     public bool isDirectional;
     public bool isLeveled;
     public bool isFluid;
     public bool isDestroyable;
     public float baseDestroyTime;
-    public float toolDestroyTime;
+    public ToolCategories ProperToolCategory;
 }

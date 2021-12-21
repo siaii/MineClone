@@ -7,7 +7,9 @@
 
 # Uncomment this line if you wish to ignore the asset store tools plugin
 # [Aa]ssets/AssetStoreTools*
-Asset Store/
+Assets/Asset Store/
+Assets/Models/Unused
+
 
 # Visual Studio cache directory
 .vs/

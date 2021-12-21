@@ -26,9 +26,10 @@ public class PlayerInventory : MonoBehaviour
     [SerializeField] private InventoryViewItemSlot[] _inventoryViewItemSlots = new InventoryViewItemSlot[inventorySize];
     [SerializeField] private InventoryViewItemSlot[] _creativeViewItemSlots = new InventoryViewItemSlot[5];
     [SerializeField] private HoldItemView holdItemView;
-    
+
     [SerializeField] private GraphicRaycaster canvasRaycaster;
 
+    [SerializeField] private GameObject handBaseGameObject;
 
     // Start is called before the first frame update
     void Start()
@@ -87,6 +88,7 @@ public class PlayerInventory : MonoBehaviour
         }
         ProcessScrollwheel();
         ProcessNumberButton();
+        ProcessHandModel();
     }
 
     private void ProcessScrollwheel()
@@ -235,6 +237,11 @@ public class PlayerInventory : MonoBehaviour
                 }
             }   
         }
+    }
+
+    private void ProcessHandModel()
+    {
+        
     }
 
     public void InventoryInteract(PointerEventData.InputButton mouseClickButton, int itemSlotIndex, bool isCreative = false)

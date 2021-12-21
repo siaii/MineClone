@@ -40,6 +40,11 @@ public class BlockPropertyManager : MonoBehaviour
         _texturePacker.generateTextureDictIdx(blockProperty);
     }
 
+    private void Start()
+    {
+        AssignBlockProperties();
+    }
+
     private void AssignBlockProperties()
     {
         foreach (var propertyPair in blockProperty)
